@@ -215,7 +215,7 @@ function startGameLoops() {
         updateZombies();
         if (!gameRunning || endingGame) return;
         if (waveSpawned >= waveSize() && zombies.length === 0) {
-            if (!isEndless() && currentWave >= 10) {
+            if (!isEndless() && currentWave >= getWaveLimit()) {
                 void finishLevel();
                 return;
             }

@@ -29,7 +29,7 @@ function startGame(saved = null) {
     document.getElementById("levelGameName").textContent = gameMode === "infinite"
         ? `Бесконечная игра • слот ${infiniteSlot}`
         : gameMode === "online" ? "Совместная игра • личное солнце" : `Уровень ${currentLevel}`;
-    document.getElementById("waveLimit").textContent = isEndless() ? " / ∞" : " / 10";
+    document.getElementById("waveLimit").textContent = isEndless() ? " / ∞" : ` / ${getWaveLimit()}`;
     document.getElementById("waveNumber").textContent = currentWave;
     document.getElementById("chatMessages").innerHTML = "";
     document.getElementById("chatBox").classList.remove("open");
@@ -50,6 +50,10 @@ function startGame(saved = null) {
 
 function isEndless() {
     return gameMode === "infinite" || (gameMode === "online" && currentLobby?.difficulty === "infinite");
+}
+
+function getWaveLimit() {
+    return gameMode === "campaign" ? 5 : 10;
 }
 
 function isMatchHost() {

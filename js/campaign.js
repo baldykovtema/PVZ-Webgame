@@ -115,7 +115,7 @@ function chooseLevel(level) {
     document.getElementById("plantDescription")
         .textContent =
         getLocationForLevel(level) +
-        " • 10 волн зомби";
+        ` • ${getWaveLimit()} волн зомби`;
 
 
     renderPlants();
