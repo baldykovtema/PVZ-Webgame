@@ -342,6 +342,15 @@ button {
     z-index: 10;
 }
 
+#exitGameButton {
+    width: 44px;
+    min-width: 44px;
+    height: 44px;
+    padding: 0;
+    font-size: 30px;
+    line-height: 1;
+}
+
 .sun-counter {
     padding: 10px 16px;
     border-radius: 15px;
@@ -409,7 +418,7 @@ button.my-plant {
     transform: translate(-50%,-50%);
     display: grid;
     place-items: center;
-    font-size: clamp(25px, 4vw, 48px);
+    font-size: clamp(34px, 7vw, 64px);
     cursor: pointer;
     user-select: none;
     z-index: 3;
@@ -452,7 +461,11 @@ button.my-plant {
 .sun {
     position: absolute;
     transform: translate(-50%,-50%);
-    font-size: 35px;
+    width: clamp(42px, 8vw, 72px);
+    height: clamp(42px, 8vw, 72px);
+    display: grid;
+    place-items: center;
+    font-size: clamp(32px, 7vw, 58px);
     cursor: pointer;
     z-index: 7;
     animation: sunFloat 1s infinite alternate;
@@ -561,7 +574,9 @@ button.my-plant {
 }
 
 .my-plant {
-    font-size: 26px;
+    min-width: 48px;
+    min-height: 48px;
+    font-size: clamp(25px, 5vw, 38px);
     flex: none;
 }
 
@@ -811,6 +826,7 @@ button.my-plant {
 }
 
 .game-modal-card {
+    position: relative;
     width: min(430px, 100%);
     background: rgba(18, 30, 18, .98);
     border: 1px solid #5d805d;
@@ -837,6 +853,66 @@ button.my-plant {
     min-width: 110px;
 }
 
+.mini-game-heading {
+    padding-right: 42px;
+    font-size: 21px;
+    font-weight: 700;
+}
+
+.mini-game-close {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    width: 40px;
+    height: 40px;
+    padding: 0;
+    border: 1px solid #60745c;
+    border-radius: 6px;
+    background: #263826;
+    color: white;
+    font-size: 28px;
+    line-height: 1;
+}
+
+.game-modal:has(.mini-game-option) .game-modal-card {
+    width: min(760px, 100%);
+    max-height: min(88vh, 780px);
+    overflow-y: auto;
+}
+
+.game-modal:has(.mini-game-option) .game-modal-actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    justify-content: stretch;
+    gap: 12px;
+}
+
+.mini-game-option {
+    min-width: 0;
+    padding: 14px;
+    border: 1px solid #435943;
+    border-radius: 6px;
+    background: #1b2b1b;
+}
+
+.mini-game-option h3 {
+    margin: 0 0 8px;
+    color: #e6f5e3;
+    font-size: 17px;
+}
+
+.mini-game-option p {
+    min-height: 42px;
+    margin: 0 0 12px;
+    color: #bdcdb9;
+    font-size: 14px;
+    line-height: 1.45;
+}
+
+.mini-game-option button {
+    width: 100%;
+}
+
 /* =========================
    SAVES
 ========================= */
@@ -857,6 +933,48 @@ button.my-plant {
 }
 
 @media(max-width:700px) {
+
+    .game-top {
+        min-height: 60px;
+        gap: 7px;
+        padding: 7px;
+    }
+
+    .lawn {
+        height: calc(100dvh - 60px);
+        max-height: calc(100dvh - 60px);
+    }
+
+    .sun-counter,
+    .wave-counter {
+        padding: 8px 10px;
+        font-size: 14px;
+    }
+
+    #levelGameName {
+        min-width: 0;
+        overflow: hidden;
+        font-size: 13px;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .my-plant {
+        min-width: 54px;
+        min-height: 54px;
+    }
+
+    .game-modal {
+        padding: 10px;
+    }
+
+    .game-modal:has(.mini-game-option) .game-modal-actions {
+        grid-template-columns: 1fr;
+    }
+
+    .mini-game-option p {
+        min-height: 0;
+    }
 
     .save-grid {
         grid-template-columns: 1fr;

@@ -58,7 +58,7 @@ function isEndless() {
 }
 
 function getWaveLimit() {
-    if (gameMode === "mini") return activeMiniGame === "rush" ? 6 : 5;
+    if (gameMode === "mini") return activeMiniGame === "rush" ? 6 : activeMiniGame === "boss" ? 2 : 5;
     return gameMode === "campaign" ? 5 : 10;
 }
 
@@ -66,6 +66,9 @@ function getMiniGameTitle() {
     if (activeMiniGame === "sunrush") return "Мини-игра • Солнечный марафон";
     if (activeMiniGame === "rush") return "Мини-игра • Быстрый натиск";
     if (activeMiniGame === "wall") return "Мини-игра • Оборона орехами";
+    if (activeMiniGame === "garden") return "Мини-игра • Солнечный сад";
+    if (activeMiniGame === "night") return "Мини-игра • Ночная смена";
+    if (activeMiniGame === "boss") return "Мини-игра • Большая угроза";
     return "Мини-игра";
 }
 

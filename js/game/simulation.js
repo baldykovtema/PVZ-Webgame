@@ -120,11 +120,13 @@ function spawnZombie() {
 
         hp:
             type.hp * difficultyFactor *
-            (1 + currentWave * .12),
+            (1 + currentWave * .12) *
+            (gameMode === "mini" && activeMiniGame === "boss" ? 2.5 : 1),
 
         speed:
             type.speed *
-            (1 + currentWave * .04),
+            (1 + currentWave * .04) *
+            (gameMode === "mini" && activeMiniGame === "boss" ? 1.2 : 1),
 
         emoji:
             type.emoji
@@ -230,6 +232,7 @@ function startGameLoops() {
 function waveSize() {
     if (gameMode === "mini" && activeMiniGame === "rush") return 7 + currentWave * 3;
     if (gameMode === "mini" && activeMiniGame === "wall") return 3 + currentWave * 2;
+    if (gameMode === "mini" && activeMiniGame === "boss") return 12 + currentWave * 5;
     return 4 + currentWave * 2;
 }
 
@@ -239,12 +242,15 @@ function getSpawnDelay() {
 
     if (gameMode === "mini" && activeMiniGame === "rush") return Math.max(900, base - 1300);
     if (gameMode === "mini" && activeMiniGame === "wall") return base + 700;
+    if (gameMode === "mini" && activeMiniGame === "boss") return base + 900;
 
     return base;
 }
 
 function getSunDelay() {
     if (gameMode === "mini" && activeMiniGame === "sunrush") return 1800;
+    if (gameMode === "mini" && activeMiniGame === "garden") return 2400;
+    if (gameMode === "mini" && activeMiniGame === "night") return 6500;
 
     return 4000;
 }
@@ -254,9 +260,10 @@ function updatePlants() {
         plant.age = (plant.age ?? 0) + 100;
         plant.cooldown = Math.max(0, (plant.cooldown ?? 0) - 100);
         if (plant.plantId === "sunflower") {
-            if (plant.cooldown === 0 && plant.age >= 8000) {
+            const sunInterval = gameMode === "mini" && activeMiniGame === "garden" ? 4000 : 8000;
+            if (plant.cooldown === 0 && plant.age >= sunInterval) {
                 spawnPlantSun(plant);
-                plant.cooldown = 8000;
+                plant.cooldown = sunInterval;
             }
             continue;
         }
@@ -354,7 +361,10 @@ async function loseGame() {
     stopGame();
     if (gameMode === "online") return endOnlineMatch("🧟 Зомби добрались до дома. Поражение!");
     alert("🧟 Зомби добрались до дома. Попробуй ещё раз!");
-    if (gameMode === "infinite") await showSaves();
+    if (gameMode === "mini") {
+        activeMiniGame = null;
+        showMenu();
+    } else if (gameMode === "infinite") await showSaves();
     else showMap();
 }
 

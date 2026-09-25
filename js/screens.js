@@ -91,6 +91,7 @@ function miniGames() {
 
     parts.message.textContent =
         "Выбери мини-игру";
+    parts.message.classList.add("mini-game-heading");
 
     parts.actions.innerHTML =
         "";
@@ -98,35 +99,62 @@ function miniGames() {
     const games = [
         {
             id: "sunrush",
-            name: "Солнечный марафон"
+            name: "Солнечный марафон",
+            description: "Собирай солнца и подготовься к пяти волнам зомби."
         },
         {
             id: "rush",
-            name: "Быстрый натиск"
+            name: "Быстрый натиск",
+            description: "Отрази шесть стремительных волн с увеличенным числом зомби."
         },
         {
             id: "wall",
-            name: "Оборона орехами"
+            name: "Оборона орехами",
+            description: "Защищай дорожки орехами от пяти волн зомби."
+        },
+        {
+            id: "garden",
+            name: "Солнечный сад",
+            description: "Сажай подсолнухи: они производят солнце в два раза быстрее."
+        },
+        {
+            id: "night",
+            name: "Ночная смена",
+            description: "Переживи пять волн, когда солнце падает реже."
+        },
+        {
+            id: "boss",
+            name: "Большая угроза",
+            description: "Останови две большие волны усиленных зомби."
         }
     ];
 
+    parts.modal.querySelector(".mini-game-close")?.remove();
+    const closeButton = document.createElement("button");
+    closeButton.className = "mini-game-close";
+    closeButton.type = "button";
+    closeButton.setAttribute("aria-label", "Закрыть выбор мини игр");
+    closeButton.title = "Закрыть";
+    closeButton.textContent = "×";
+    closeButton.onclick = () => { parts.modal.hidden = true; };
+    parts.modal.querySelector(".game-modal-card")?.prepend(closeButton);
+
     games.forEach(game => {
-        const button =
-            document.createElement("button");
-
-        button.className =
-            "primary";
-
-        button.textContent =
-            game.name;
-
-        button.onclick =
-            () => {
-                parts.modal.hidden = true;
-                startMiniGame(game.id);
-            };
-
-        parts.actions.appendChild(button);
+        const card = document.createElement("div");
+        card.className = "mini-game-option";
+        const title = document.createElement("h3");
+        title.textContent = game.name;
+        const description = document.createElement("p");
+        description.textContent = game.description;
+        const button = document.createElement("button");
+        button.className = "primary";
+        button.textContent = "Играть";
+        button.onclick = () => {
+            parts.modal.hidden = true;
+            startMiniGame(game.id);
+        };
+        card.append(title, description, button);
+        parts.actions.appendChild(card);
     });
 
     parts.modal.hidden =
@@ -154,6 +182,10 @@ function startMiniGame(id) {
             filterUnlockedPlants(["peashooter", "sunflower", "wallnut", "icepea", "bokchoy"], currentLevel);
     }
 
+    if (id === "boss") {
+        selectedPlants = filterUnlockedPlants(["peashooter", "sunflower", "cherry", "icepea", "repeater"], currentLevel);
+    }
+
     if (!selectedPlants.length) {
         selectedPlants =
             ["peashooter"];
@@ -162,7 +194,7 @@ function startMiniGame(id) {
     startGame({
         version: 1,
         wave: 1,
-        sun: id === "sunrush" ? 300 : 175,
+        sun: id === "sunrush" ? 400 : id === "night" ? 125 : id === "boss" ? 350 : 250,
         plants: [],
         zombies: [],
         sunDrops: [],
