@@ -97,7 +97,7 @@ const plants = [
         name: "Двойной горох",
         emoji: "🫘",
         cost: 200,
-        unlock: 7
+        unlock: 6
     },
 
     {
@@ -105,7 +105,7 @@ const plants = [
         name: "Кактус",
         emoji: "🌵",
         cost: 125,
-        unlock: 10
+        unlock: 7
     },
 
     {
@@ -113,7 +113,7 @@ const plants = [
         name: "Кукурузник",
         emoji: "🌽",
         cost: 100,
-        unlock: 15
+        unlock: 8
     },
 
     {
@@ -121,7 +121,7 @@ const plants = [
         name: "Огненный горох",
         emoji: "🔥",
         cost: 225,
-        unlock: 20
+        unlock: 9
     },
 
     {
@@ -129,7 +129,7 @@ const plants = [
         name: "Гриб",
         emoji: "🍄",
         cost: 75,
-        unlock: 25
+        unlock: 10
     },
 
     {
@@ -137,10 +137,31 @@ const plants = [
         name: "Бок-чой",
         emoji: "🥬",
         cost: 125,
-        unlock: 30
+        unlock: 11
     }
 
 ];
+
+function getUnlockedLevelCap(level = currentLevel) {
+    return Math.max(1, level || 1, profile?.unlocked_level || 0);
+}
+
+function getUnlockedPlantIds(level = currentLevel) {
+    const cap =
+        getUnlockedLevelCap(level);
+
+    return plants
+        .filter(plant => plant.unlock <= cap)
+        .map(plant => plant.id);
+}
+
+function filterUnlockedPlants(ids, level = currentLevel) {
+    const unlocked =
+        new Set(getUnlockedPlantIds(level));
+
+    return (ids || [])
+        .filter(id => unlocked.has(id));
+}
 
 
 const zombieTypes = [

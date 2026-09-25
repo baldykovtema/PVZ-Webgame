@@ -81,25 +81,92 @@ function showMap() {
 ===================================================== */
 
 function miniGames() {
+    const parts =
+        getGameModal();
 
-    alert(
+    if (!parts) {
+        startMiniGame("sunrush");
+        return;
+    }
 
-        "🎯 Мини-игры\n\n" +
+    parts.message.textContent =
+        "Выбери мини-игру";
 
-        "🌻 1. Собери солнце\n" +
+    parts.actions.innerHTML =
+        "";
 
-        "🥔 2. Поймай картофель\n" +
+    const games = [
+        {
+            id: "sunrush",
+            name: "Солнечный марафон"
+        },
+        {
+            id: "rush",
+            name: "Быстрый натиск"
+        },
+        {
+            id: "wall",
+            name: "Оборона орехами"
+        }
+    ];
 
-        "🧟 3. Уничтожь зомби\n" +
+    games.forEach(game => {
+        const button =
+            document.createElement("button");
 
-        "🌱 4. Посади растения\n" +
+        button.className =
+            "primary";
 
-        "☀️ 5. Солнечный марафон\n" +
+        button.textContent =
+            game.name;
 
-        "🧠 6. Память растений\n\n" +
+        button.onclick =
+            () => {
+                parts.modal.hidden = true;
+                startMiniGame(game.id);
+            };
 
-        "Сами мини-игры добавим следующим этапом."
+        parts.actions.appendChild(button);
+    });
 
-    );
+    parts.modal.hidden =
+        false;
+}
 
+function startMiniGame(id) {
+    activeMiniGame =
+        id;
+
+    gameMode =
+        "mini";
+
+    infiniteSlot =
+        null;
+
+    currentLevel =
+        Math.max(1, profile?.unlocked_level || 1);
+
+    selectedPlants =
+        getUnlockedPlantIds(currentLevel);
+
+    if (id === "wall") {
+        selectedPlants =
+            filterUnlockedPlants(["peashooter", "sunflower", "wallnut", "icepea", "bokchoy"], currentLevel);
+    }
+
+    if (!selectedPlants.length) {
+        selectedPlants =
+            ["peashooter"];
+    }
+
+    startGame({
+        version: 1,
+        wave: 1,
+        sun: id === "sunrush" ? 300 : 175,
+        plants: [],
+        zombies: [],
+        sunDrops: [],
+        selectedPlants,
+        location: "mini"
+    });
 }

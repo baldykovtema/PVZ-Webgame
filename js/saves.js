@@ -156,7 +156,7 @@ async function newInfiniteGame(slot) {
     savingGame = true;
     try {
         const saveData = {version: 1, wave: 1, sun: 150, plants: [], zombies: [],
-            selectedPlants: plants.filter(p => p.unlock <= Math.max(1, profile.unlocked_level ?? 0)).map(p => p.id),
+            selectedPlants: getUnlockedPlantIds(profile?.unlocked_level || 1),
             location: "infinite"};
         if (!await saveInfinite(slot, saveData)) return;
         gameMode = "infinite";
@@ -182,8 +182,8 @@ async function continueInfinite(slot) {
         const saved = data.save_data;
         gameMode = "infinite";
         infiniteSlot = slot;
-        selectedPlants = (saved.selectedPlants ?? []).filter(id => plants.some(p => p.id === id));
-        if (!selectedPlants.length) selectedPlants = ["peashooter", "sunflower"];
+        selectedPlants = filterUnlockedPlants(saved.selectedPlants, profile?.unlocked_level || 1);
+        if (!selectedPlants.length) selectedPlants = getUnlockedPlantIds(profile?.unlocked_level || 1).slice(0, 2);
         startGame(saved);
     } finally {
         savingGame = false;

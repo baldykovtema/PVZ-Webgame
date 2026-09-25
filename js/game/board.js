@@ -3,6 +3,9 @@
 ===================================================== */
 
 function startGame(saved = null) {
+    selectedPlants =
+        filterUnlockedPlants(selectedPlants, gameMode === "campaign" ? currentLevel : profile?.unlocked_level || currentLevel);
+
     if (!selectedPlants.length) {
         alert("Выбери хотя бы одно растение.");
         return;
@@ -28,7 +31,9 @@ function startGame(saved = null) {
     document.getElementById("shovelButton").style.background = "";
     document.getElementById("levelGameName").textContent = gameMode === "infinite"
         ? `Бесконечная игра • слот ${infiniteSlot}`
-        : gameMode === "online" ? "Совместная игра • личное солнце" : `Уровень ${currentLevel}`;
+        : gameMode === "online" ? "Совместная игра • личное солнце"
+            : gameMode === "mini" ? getMiniGameTitle()
+                : `Уровень ${currentLevel}`;
     document.getElementById("waveLimit").textContent = isEndless() ? " / ∞" : ` / ${getWaveLimit()}`;
     document.getElementById("waveNumber").textContent = currentWave;
     document.getElementById("chatMessages").innerHTML = "";
@@ -53,7 +58,15 @@ function isEndless() {
 }
 
 function getWaveLimit() {
+    if (gameMode === "mini") return activeMiniGame === "rush" ? 6 : 5;
     return gameMode === "campaign" ? 5 : 10;
+}
+
+function getMiniGameTitle() {
+    if (activeMiniGame === "sunrush") return "Мини-игра • Солнечный марафон";
+    if (activeMiniGame === "rush") return "Мини-игра • Быстрый натиск";
+    if (activeMiniGame === "wall") return "Мини-игра • Оборона орехами";
+    return "Мини-игра";
 }
 
 function isMatchHost() {
@@ -112,6 +125,49 @@ function renderPlayersPanel() {
     }
 }
 
+function showNoSunNotice() {
+    if (!document.body) {
+        alert("☀️ Недостаточно солнца!");
+        return;
+    }
+
+    let notice =
+        document.getElementById("noSunNotice");
+
+    if (!notice) {
+        notice =
+            document.createElement("div");
+
+        notice.id =
+            "noSunNotice";
+
+        notice.className =
+            "no-sun-notice";
+
+        notice.textContent =
+            "Не хвотоает денег";
+
+        document.body
+            .appendChild(notice);
+    }
+
+    notice.style.left =
+        `${lastPointerX}px`;
+
+    notice.style.top =
+        `${lastPointerY}px`;
+
+    notice.classList.add("show");
+
+    clearTimeout(showNoSunNotice.timer);
+
+    showNoSunNotice.timer =
+        setTimeout(
+            () => notice.classList.remove("show"),
+            900
+        );
+}
+
 
 function createBoard() {
 
@@ -160,10 +216,26 @@ function createBoard() {
     lawn.onclick =
         handleLawnClick;
 
+    lawn.onpointermove =
+        trackPointer;
+
+    lawn.onpointerdown =
+        trackPointer;
+
+}
+
+function trackPointer(event) {
+    lastPointerX =
+        event.clientX;
+
+    lastPointerY =
+        event.clientY;
 }
 
 
 function handleLawnClick(event) {
+
+    trackPointer(event);
 
     if (
         event.target !==
@@ -239,7 +311,7 @@ function plantAt(row, col, plantId = activePlantId, owner = profile.username, ow
     const plant = plants.find(p => p.id === plantId);
     if (!plant || !selectedPlants.includes(plantId)) return;
     if (getPlayerSun(ownerId) < plant.cost) {
-        if (owner === profile.username) alert("☀️ Недостаточно солнца!");
+        if (owner === profile.username) showNoSunNotice();
         return;
     }
     setPlayerSun(ownerId, getPlayerSun(ownerId) - plant.cost);

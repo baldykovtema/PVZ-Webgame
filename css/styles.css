@@ -458,6 +458,23 @@ button.my-plant {
     animation: sunFloat 1s infinite alternate;
 }
 
+.no-sun-notice {
+    position: fixed;
+    z-index: 1200;
+    pointer-events: none;
+    color: #ff2b2b;
+    font-weight: 900;
+    text-shadow: 0 2px 0 #fff, 0 0 9px #fff;
+    transform: translate(12px, -24px);
+    opacity: 0;
+    white-space: nowrap;
+    transition: opacity .12s ease;
+}
+
+.no-sun-notice.show {
+    opacity: 1;
+}
+
 .projectile {
     position: absolute;
     width: 18px;

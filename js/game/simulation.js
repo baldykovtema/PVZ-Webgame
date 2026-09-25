@@ -195,12 +195,12 @@ function startGameLoops() {
         if (!gameRunning || endingGame) return;
         spawnElapsed += 100;
         sunElapsed += 100;
-        if (waveSpawned < waveSize() && spawnElapsed >= Math.max(1800, 5000 - currentWave * 250)) {
+        if (waveSpawned < waveSize() && spawnElapsed >= getSpawnDelay()) {
             spawnElapsed = 0;
             spawnZombie();
             waveSpawned++;
         }
-        if (sunElapsed >= 4000) {
+        if (sunElapsed >= getSunDelay()) {
             sunElapsed = 0;
             spawnSun();
         }
@@ -228,7 +228,25 @@ function startGameLoops() {
 }
 
 function waveSize() {
+    if (gameMode === "mini" && activeMiniGame === "rush") return 7 + currentWave * 3;
+    if (gameMode === "mini" && activeMiniGame === "wall") return 3 + currentWave * 2;
     return 4 + currentWave * 2;
+}
+
+function getSpawnDelay() {
+    const base =
+        Math.max(1800, 5000 - currentWave * 250);
+
+    if (gameMode === "mini" && activeMiniGame === "rush") return Math.max(900, base - 1300);
+    if (gameMode === "mini" && activeMiniGame === "wall") return base + 700;
+
+    return base;
+}
+
+function getSunDelay() {
+    if (gameMode === "mini" && activeMiniGame === "sunrush") return 1800;
+
+    return 4000;
 }
 
 function updatePlants() {
@@ -372,6 +390,13 @@ async function finishLevel() {
     endingGame = true;
     stopGame();
     if (gameMode === "online") return endOnlineMatch("🎉 Все 10 волн пройдены!");
+    if (gameMode === "mini") {
+        alert("🎯 Мини-игра пройдена!");
+        activeMiniGame = null;
+        showMenu();
+        return;
+    }
+
     if (gameMode !== "campaign") return;
 
 

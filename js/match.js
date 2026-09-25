@@ -15,7 +15,7 @@ async function startOnlineMatch(players) {
     matchConnectedAt = Date.now();
     lastMatchMessage = Date.now();
     endingGame = false;
-    selectedPlants = ["peashooter", "sunflower", "wallnut", "potatomine", "cherry", "icepea"];
+    selectedPlants = getUnlockedPlantIds(profile?.unlocked_level || 1);
     const channel = supabaseClient.channel(`match-${lobbyId}`, {config: {broadcast: {ack: true}}});
     matchChannel = channel;
     channel.on("broadcast", {event: "action"}, ({payload}) => {

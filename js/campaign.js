@@ -160,7 +160,8 @@ function renderPlants() {
     plants.forEach(plant => {
 
         const unlocked =
-            plant.unlock <= currentLevel;
+            getUnlockedPlantIds(currentLevel)
+                .includes(plant.id);
 
 
         const card =
