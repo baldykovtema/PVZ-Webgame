@@ -153,19 +153,29 @@ async function renderSaves() {
 
 async function newInfiniteGame(slot) {
     if (savingGame) return;
-    savingGame = true;
-    try {
-        const saveData = {version: 1, wave: 1, sun: 150, plants: [], zombies: [],
-            selectedPlants: getUnlockedPlantIds(profile?.unlocked_level || 1),
-            location: "infinite"};
-        if (!await saveInfinite(slot, saveData)) return;
-        gameMode = "infinite";
-        infiniteSlot = slot;
-        selectedPlants = saveData.selectedPlants;
-        startGame(saveData);
-    } finally {
-        savingGame = false;
-    }
+    gameMode = "infinite";
+    infiniteSlot = slot;
+    currentLevel = Math.max(1, profile?.unlocked_level || 1);
+    const pool = getUnlockedPlantIds(currentLevel);
+    openPlantSelection({
+        title: `Бесконечная игра • слот ${slot}`,
+        description: "Выбери растения для начала. Состав можно будет изменить после каждой десятой волны.",
+        pool,
+        limit: Math.min(6, pool.length),
+        startText: "🎮 НАЧАТЬ БЕСКОНЕЧНУЮ ИГРУ",
+        onStart: async () => {
+            if (savingGame) return;
+            savingGame = true;
+            try {
+                const saveData = {version: 1, wave: 1, sun: 150, plants: [], zombies: [], sunDrops: [],
+                    selectedPlants: [...selectedPlants], location: "infinite"};
+                if (await saveInfinite(slot, saveData)) startGame(saveData);
+            } finally {
+                savingGame = false;
+            }
+        },
+        onCancel: () => showSaves()
+    });
 }
 
 
@@ -184,7 +194,18 @@ async function continueInfinite(slot) {
         infiniteSlot = slot;
         selectedPlants = filterUnlockedPlants(saved.selectedPlants, profile?.unlocked_level || 1);
         if (!selectedPlants.length) selectedPlants = getUnlockedPlantIds(profile?.unlocked_level || 1).slice(0, 2);
-        startGame(saved);
+        currentLevel = Math.max(1, profile?.unlocked_level || 1);
+        const savedRoster = [...selectedPlants];
+        openPlantSelection({
+            title: `Бесконечная игра • слот ${slot}`,
+            description: `Волна ${saved.wave || 1}. Выбери растения для продолжения.`,
+            pool: getUnlockedPlantIds(currentLevel),
+            selected: savedRoster,
+            limit: 10,
+            startText: "▶️ ПРОДОЛЖИТЬ",
+            onStart: () => startGame({...saved, selectedPlants: [...selectedPlants]}),
+            onCancel: () => showSaves()
+        });
     } finally {
         savingGame = false;
     }

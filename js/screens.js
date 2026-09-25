@@ -174,31 +174,32 @@ function startMiniGame(id) {
     currentLevel =
         Math.max(1, profile?.unlocked_level || 1);
 
-    selectedPlants =
-        getUnlockedPlantIds(currentLevel);
+    let plantPool = getUnlockedPlantIds(currentLevel);
 
     if (id === "wall") {
-        selectedPlants =
-            filterUnlockedPlants(["peashooter", "sunflower", "wallnut", "icepea", "bokchoy"], currentLevel);
+        plantPool = filterUnlockedPlants(["peashooter", "sunflower", "wallnut", "icepea", "bokchoy"], currentLevel);
     }
 
     if (id === "boss") {
-        selectedPlants = filterUnlockedPlants(["peashooter", "sunflower", "cherry", "icepea", "repeater"], currentLevel);
+        plantPool = filterUnlockedPlants(["peashooter", "sunflower", "cherry", "icepea", "repeater"], currentLevel);
     }
 
-    if (!selectedPlants.length) {
-        selectedPlants =
-            ["peashooter"];
-    }
-
-    startGame({
+    const miniSave = {
         version: 1,
         wave: 1,
         sun: id === "sunrush" ? 400 : id === "night" ? 125 : id === "boss" ? 350 : 250,
         plants: [],
         zombies: [],
         sunDrops: [],
-        selectedPlants,
         location: "mini"
+    };
+    openPlantSelection({
+        title: getMiniGameTitle(),
+        description: "Выбери растения для этой мини игры.",
+        pool: plantPool,
+        limit: 10,
+        startText: "🎮 НАЧАТЬ МИНИ ИГРУ",
+        onStart: () => startGame({...miniSave, selectedPlants}),
+        onCancel: () => miniGames()
     });
 }

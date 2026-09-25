@@ -1065,16 +1065,40 @@ async function toggleReady() {
             );
         if (error || !me) throw error || new Error("Игрок не найден в лобби");
         if (currentLobby?.id !== lobbyId || leavingLobby) return;
-        const {error: updateError} = await supabaseClient.from("lobby_players").update({ready: !me.ready})
-            .eq("id", me.id);
-        if (updateError) throw updateError;
-        await renderLobby();
+        if (!me.ready) {
+            readyBusy = false;
+            button.disabled = false;
+            openPlantSelection({
+                title: "Онлайн игра",
+                description: "Выбери растения, которыми будешь играть в этом матче.",
+                pool: getUnlockedPlantIds(profile?.unlocked_level || 1),
+                limit: 10,
+                startText: "🟢 ВЫБРАТЬ И ГОТОВ",
+                onStart: async () => {
+                    matchPlantSelections[currentUser.id] = [...selectedPlants];
+                    showScreen("lobbyScreen");
+                    await setLobbyReady(me.id, true);
+                },
+                onCancel: () => showScreen("lobbyScreen")
+            });
+            return;
+        }
+        await setLobbyReady(me.id, false);
     } catch (error) {
         alert("❌ Не удалось изменить готовность: " + error.message);
     } finally {
         readyBusy = false;
         button.disabled = false;
     }
+}
+
+async function setLobbyReady(playerId, ready) {
+    const {error} = await supabaseClient.from("lobby_players").update({ready}).eq("id", playerId);
+    if (error) {
+        alert("❌ Не удалось изменить готовность: " + error.message);
+        return;
+    }
+    await renderLobby();
 }
 
 /* =====================================================

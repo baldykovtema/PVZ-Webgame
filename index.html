@@ -326,14 +326,15 @@
 
         <button
             class="secondary"
-            onclick="showMap()">
+            id="plantSelectionBackButton"
+            onclick="cancelPlantSelection()">
 
             ← Назад
 
         </button>
 
         <b id="selectedLevelTitle">
-            Уровень
+            Выбор растений
         </b>
 
     </div>
@@ -367,9 +368,10 @@
 
         <button
             class="primary"
-            onclick="startGame()">
+            id="startPlantSelectionButton"
+            onclick="confirmPlantSelection()">
 
-            🎮 НАЧАТЬ УРОВЕНЬ
+            🎮 НАЧАТЬ ИГРУ
 
         </button>
 

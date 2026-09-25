@@ -312,7 +312,10 @@ function plantAt(row, col, plantId = activePlantId, owner = profile.username, ow
     const exists = boardPlants.find(p => p.row === row && p.col === col);
     if (exists) return;
     const plant = plants.find(p => p.id === plantId);
-    if (!plant || !selectedPlants.includes(plantId)) return;
+    const ownerPlantList = gameMode === "online"
+        ? matchPlantSelections[ownerId] || []
+        : selectedPlants;
+    if (!plant || !ownerPlantList.includes(plantId)) return;
     if (getPlayerSun(ownerId) < plant.cost) {
         if (owner === profile.username) showNoSunNotice();
         return;
@@ -321,7 +324,7 @@ function plantAt(row, col, plantId = activePlantId, owner = profile.username, ow
     updateSun();
     const boardPlant = {
         id: crypto.randomUUID(), plantId, row, col, owner, ownerId,
-        health: plantId === "wallnut" ? 600 : 100,
+        health: ["wallnut", "tallnut", "primalwallnut"].includes(plantId) ? 800 : 100,
         cooldown: 0, age: 0
     };
     boardPlants.push(boardPlant);
@@ -520,7 +523,10 @@ function toggleShovel() {
 function renderMyPlants() {
     const list = document.getElementById("myPlantList");
     list.innerHTML = "";
-    selectedPlants.forEach(id => {
+    const plantList = gameMode === "online"
+        ? matchPlantSelections[currentUser?.id] || selectedPlants
+        : selectedPlants;
+    plantList.forEach(id => {
         const plant = plants.find(p => p.id === id);
         if (!plant) return;
         const button = document.createElement("button");
@@ -531,6 +537,7 @@ function renderMyPlants() {
         button.style.outline = activePlantId === id ? "3px solid #ffdb60" : "none";
         button.onclick = () => {
             activePlantId = id;
+            selectedPlants = plantList;
             if (shovelMode) toggleShovel();
             renderMyPlants();
         };

@@ -15,7 +15,7 @@ async function startOnlineMatch(players) {
     matchConnectedAt = Date.now();
     lastMatchMessage = Date.now();
     endingGame = false;
-    selectedPlants = getUnlockedPlantIds(profile?.unlocked_level || 1);
+    matchPlantSelections = {[currentUser.id]: [...selectedPlants]};
     const channel = supabaseClient.channel(`match-${lobbyId}`, {config: {broadcast: {ack: true}}});
     matchChannel = channel;
     channel.on("broadcast", {event: "action"}, ({payload}) => {
@@ -23,7 +23,15 @@ async function startOnlineMatch(players) {
         const player = matchPlayers.find(p => p.user_id === payload.userId);
         if (!player) return;
         if (payload.type === "hello") {
-            matchPeers.add(player.user_id);
+            const level = Math.max(1, Number(payload.unlockedLevel) || 1);
+            const unlocked = new Set(plants.filter(plant => plant.unlock <= level).map(plant => plant.id));
+            const roster = Array.isArray(payload.selectedPlants)
+                ? [...new Set(payload.selectedPlants.filter(id => unlocked.has(id)))].slice(0, 10)
+                : [];
+            if (roster.length) {
+                matchPlantSelections[player.user_id] = roster;
+                matchPeers.add(player.user_id);
+            }
             return;
         }
         if (!gameRunning || endingGame) return;
@@ -40,7 +48,8 @@ async function startOnlineMatch(players) {
         lastMatchMessage = Date.now();
         setMatchStatus("");
         if (!gameRunning) {
-            selectedPlants = payload.state.selectedPlants;
+            matchPlantSelections = payload.state.matchPlantSelections || matchPlantSelections;
+            selectedPlants = matchPlantSelections[currentUser.id] || payload.state.selectedPlants;
             startGame(payload.state);
         } else applyMatchState(payload.state);
     }).on("broadcast", {event: "end"}, ({payload}) => {
@@ -81,11 +90,11 @@ async function startOnlineMatch(players) {
             if (!isMatchHost()) {
                 if (!gameRunning && now - lastMatchHello >= 1000) {
                     lastMatchHello = now;
-                    await sendMatchAction({type: "hello"});
+                    await sendMatchAction({type: "hello", selectedPlants, unlockedLevel: profile?.unlocked_level || 1});
                 }
                 return;
             }
-            if (!gameRunning && !matchStarting && matchPlayers.length && matchPlayers.every(p => p.ready && matchPeers.has(p.user_id))) {
+            if (!gameRunning && !matchStarting && matchPlayers.length && matchPlayers.every(p => p.ready && matchPeers.has(p.user_id) && matchPlantSelections[p.user_id]?.length)) {
                 matchStarting = true;
                 const {data, error} = await supabaseClient.from("lobbies").update({status: "playing"})
                     .eq("id", lobbyId).eq("status", "waiting").select().single();
@@ -156,6 +165,9 @@ function applyMatchState(state) {
     zombies = state.zombies;
     sunDrops = state.sunDrops;
     attackEvents = state.attackEvents || [];
+    matchPlantSelections = state.matchPlantSelections || matchPlantSelections;
+    selectedPlants = matchPlantSelections[currentUser.id] || selectedPlants;
+    renderMyPlants();
     const lawn = document.getElementById("lawn");
     for (const [className, items, render] of [["plant-on-board", boardPlants, renderBoardPlant], ["zombie", zombies, renderZombie], ["sun", sunDrops, renderSun]]) {
         const ids = new Set(items.map(item => item.id));

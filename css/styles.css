@@ -283,6 +283,8 @@ button {
     width: min(1000px, 95%);
     margin: auto;
     padding: 30px 0;
+    max-height: calc(100vh - 72px);
+    overflow-y: auto;
 }
 
 .plant-grid {

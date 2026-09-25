@@ -224,9 +224,36 @@ function startGameLoops() {
             currentWave++;
             waveSpawned = 0;
             spawnElapsed = -3000;
+            if (gameMode === "infinite" && (currentWave - 1) % 10 === 0) {
+                void openInfinitePlantSelection();
+                return;
+            }
             document.getElementById("waveNumber").textContent = currentWave;
         }
     }, 100);
+}
+
+async function openInfinitePlantSelection() {
+    stopGame();
+    const pausedState = captureGame();
+    const roster = [...selectedPlants];
+    openPlantSelection({
+        title: `Бесконечная игра • выбор после ${currentWave - 1} волн`,
+        description: `Сейчас начинается волна ${currentWave}. Выбери растения для следующих волн.`,
+        pool: getUnlockedPlantIds(profile?.unlocked_level || currentLevel),
+        selected: roster,
+        limit: 10,
+        startText: "▶️ ПРОДОЛЖИТЬ ИГРУ",
+        onStart: async () => {
+            const nextState = {...pausedState, selectedPlants: [...selectedPlants]};
+            if (!await saveInfinite(infiniteSlot, nextState)) {
+                selectedPlants = roster;
+                startGame({...pausedState, selectedPlants: roster});
+                return;
+            }
+            startGame(nextState);
+        }
+    });
 }
 
 function waveSize() {
@@ -259,15 +286,16 @@ function updatePlants() {
     for (const plant of [...boardPlants]) {
         plant.age = (plant.age ?? 0) + 100;
         plant.cooldown = Math.max(0, (plant.cooldown ?? 0) - 100);
-        if (plant.plantId === "sunflower") {
+        if (["sunflower", "twinflower", "sunshroom"].includes(plant.plantId)) {
             const sunInterval = gameMode === "mini" && activeMiniGame === "garden" ? 4000 : 8000;
             if (plant.cooldown === 0 && plant.age >= sunInterval) {
                 spawnPlantSun(plant);
+                if (plant.plantId === "twinflower") spawnPlantSun(plant);
                 plant.cooldown = sunInterval;
             }
             continue;
         }
-        if (plant.plantId === "wallnut") continue;
+        if (["wallnut", "tallnut", "primalwallnut"].includes(plant.plantId)) continue;
         const x = plant.col * 10 + 5;
         const targets = zombies.filter(z => z.hp > 0 && z.row === plant.row && z.x >= x - 3).sort((a, b) => a.x - b.x);
         if (plant.plantId === "cherry") {
@@ -282,10 +310,10 @@ function updatePlants() {
         } else if (targets.length && plant.cooldown === 0) {
             const target = targets[0];
             if (plant.plantId === "bokchoy" && target.x - x > 15) continue;
-            const damage = {repeater: 40, firepea: 45, bokchoy: 50, corn: 25, cactus: 30};
+            const damage = {repeater: 40, firepea: 45, bokchoy: 50, corn: 25, cactus: 30, threepeater: 35, melonpult: 55, wintermelon: 50, electricpea: 45, primalpea: 40};
             target.hp -= damage[plant.plantId] ?? 20;
             queueAttack(plant, target);
-            if (plant.plantId === "icepea") target.slow = 3000;
+            if (["icepea", "snowpea", "wintermelon"].includes(plant.plantId)) target.slow = 3000;
             plant.cooldown = plant.plantId === "bokchoy" ? 700 : 1200;
         }
     }
@@ -513,5 +541,5 @@ async function exitGame() {
 
 function captureGame() {
     return structuredClone({version: 1, wave: currentWave, sun, playerSuns, plants: boardPlants, zombies,
-        sunDrops, attackEvents, selectedPlants, activePlantId, waveSpawned, spawnElapsed, sunElapsed, location: "infinite"});
+        sunDrops, attackEvents, selectedPlants, matchPlantSelections, activePlantId, waveSpawned, spawnElapsed, sunElapsed, location: "infinite"});
 }

@@ -103,25 +103,16 @@ function chooseLevel(level) {
         level;
 
 
-    selectedPlants =
-        [];
-
-
-    document.getElementById("selectedLevelTitle")
-        .textContent =
-        "Уровень " + level;
-
-
-    document.getElementById("plantDescription")
-        .textContent =
-        getLocationForLevel(level) +
-        ` • ${getWaveLimit()} волн зомби`;
-
-
-    renderPlants();
-
-
-    showScreen("plantsScreen");
+    openPlantSelection({
+        title: `Уровень ${level}`,
+        description: `${getLocationForLevel(level)} • ${getWaveLimit()} волн зомби`,
+        selected: [],
+        pool: getUnlockedPlantIds(level),
+        limit: 10,
+        startText: "🎮 НАЧАТЬ УРОВЕНЬ",
+        onStart: () => startGame(),
+        onCancel: () => showMap()
+    });
 
 }
 
@@ -159,9 +150,7 @@ function renderPlants() {
 
     plants.forEach(plant => {
 
-        const unlocked =
-            getUnlockedPlantIds(currentLevel)
-                .includes(plant.id);
+        const unlocked = plantSelectionPool.includes(plant.id);
 
 
         const card =
@@ -200,7 +189,7 @@ function renderPlants() {
             ${
                 unlocked
                     ? "<small>Доступно</small>"
-                    : `<small>🔒 Уровень ${plant.unlock}</small>`
+                    : `<small>${plant.unlock > getUnlockedLevelCap(currentLevel) ? `🔒 Уровень ${plant.unlock}` : "Недоступно в этом режиме"}</small>`
             }
 
         `;
@@ -239,11 +228,11 @@ function togglePlant(id) {
     } else {
 
         if (
-            selectedPlants.length >= 10
+            selectedPlants.length >= plantSelectionLimit
         ) {
 
             alert(
-                "Можно выбрать максимум 10 растений."
+                `Можно выбрать максимум ${plantSelectionLimit} растений.`
             );
 
             return;
@@ -264,6 +253,38 @@ function updateSelectedCount() {
 
     document.getElementById("selectedCount")
         .textContent =
-        `Выбрано: ${selectedPlants.length} / 10`;
+        `Выбрано: ${selectedPlants.length} / ${plantSelectionLimit}`;
 
+}
+
+function openPlantSelection({title, description, selected = [], pool, limit = 10, startText = "🎮 НАЧАТЬ ИГРУ", onStart, onCancel}) {
+    plantSelectionPool = [...new Set(pool || getUnlockedPlantIds(currentLevel))];
+    plantSelectionLimit = Math.max(1, Math.min(limit, plantSelectionPool.length || 1));
+    selectedPlants = filterUnlockedPlants(selected, currentLevel).filter(id => plantSelectionPool.includes(id)).slice(0, plantSelectionLimit);
+    plantSelectionStart = onStart;
+    plantSelectionCancel = onCancel;
+    document.getElementById("selectedLevelTitle").textContent = title;
+    document.getElementById("plantDescription").textContent = description;
+    document.getElementById("startPlantSelectionButton").textContent = startText;
+    document.getElementById("plantSelectionBackButton").hidden = !onCancel;
+    renderPlants();
+    showScreen("plantsScreen");
+}
+
+function confirmPlantSelection() {
+    if (!selectedPlants.length) {
+        alert("Выбери хотя бы одно растение.");
+        return;
+    }
+    const start = plantSelectionStart;
+    plantSelectionStart = null;
+    plantSelectionCancel = null;
+    start?.();
+}
+
+function cancelPlantSelection() {
+    const cancel = plantSelectionCancel;
+    plantSelectionStart = null;
+    plantSelectionCancel = null;
+    cancel?.();
 }
