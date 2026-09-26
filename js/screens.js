@@ -4,6 +4,13 @@
 
 function showScreen(id) {
 
+    const plantTooltip =
+        document.getElementById("plant-tooltip");
+
+    if (plantTooltip) {
+        plantTooltip.hidden = true;
+    }
+
     document
         .querySelectorAll(".screen")
         .forEach(screen => {
