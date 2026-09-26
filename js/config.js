@@ -41,6 +41,20 @@ const supabaseClient =
     );
 
 const BOARD_ROWS = 5;
+const BOARD_X_START = 12;
+const BOARD_X_WIDTH = 80;
+
+function boardColWidth() {
+    return BOARD_X_WIDTH / 10;
+}
+
+function boardColStart(col) {
+    return BOARD_X_START + col * boardColWidth();
+}
+
+function boardColCenter(col) {
+    return boardColStart(col) + boardColWidth() / 2;
+}
 
 function rowTop(row) {
     return row * (100 / BOARD_ROWS);

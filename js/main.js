@@ -3,6 +3,7 @@
 ===================================================== */
 
 async function init() {
+    if (document.documentElement.classList.contains("phone-device")) return;
 
     const {
         data

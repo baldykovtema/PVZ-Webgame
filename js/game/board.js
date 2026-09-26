@@ -202,7 +202,7 @@ function createBoard() {
 
 
             cell.style.left =
-                `${col * 10}%`;
+                `${boardColStart(col)}%`;
 
 
             cell.style.top =
@@ -214,6 +214,32 @@ function createBoard() {
         }
 
     }
+
+    const house = document.createElement("div");
+    house.className = "lawn-decoration lawn-house";
+    house.textContent = "🏠";
+    lawn.appendChild(house);
+
+    const mowers = document.createElement("div");
+    mowers.className = "lawn-mowers";
+    for (let row = 0; row < BOARD_ROWS; row++) {
+        const mower = document.createElement("span");
+        mower.className = "lawn-mower";
+        mower.textContent = "🚜";
+        mower.setAttribute("aria-label", "Газонокосилка");
+        mowers.appendChild(mower);
+    }
+    lawn.appendChild(mowers);
+
+    const bushes = document.createElement("div");
+    bushes.className = "lawn-decoration lawn-bushes";
+    for (let row = 0; row < BOARD_ROWS; row++) {
+        const bush = document.createElement("span");
+        bush.className = "lawn-bush";
+        bush.textContent = "🌿";
+        bushes.appendChild(bush);
+    }
+    lawn.appendChild(bushes);
 
 
     lawn.onclick =
@@ -265,11 +291,8 @@ function handleLawnClick(event) {
         rect.top;
 
 
-    const col =
-        Math.floor(
-            x /
-            (rect.width / 10)
-        );
+    const boardX = (x / rect.width * 100 - BOARD_X_START) / BOARD_X_WIDTH;
+    const col = Math.floor(boardX * 10);
 
 
     const row =
@@ -280,6 +303,8 @@ function handleLawnClick(event) {
 
 
     if (
+        boardX < 0 ||
+        boardX >= 1 ||
         col < 0 ||
         col > 9 ||
         row < 0 ||
@@ -363,7 +388,7 @@ function renderBoardPlant(boardPlant) {
 
 
     element.style.left =
-        `${boardPlant.col * 10 + 5}%`;
+        `${boardColCenter(boardPlant.col)}%`;
 
 
     element.style.top =

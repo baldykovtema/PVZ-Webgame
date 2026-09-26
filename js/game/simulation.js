@@ -15,7 +15,7 @@ function updateSun() {
 
 
 function spawnSun() {
-    const drop = {id: crypto.randomUUID(), x: 10 + Math.random() * 80, y: 10 + Math.random() * 80, remaining: 10000};
+    const drop = {id: crypto.randomUUID(), x: BOARD_X_START + 3 + Math.random() * (BOARD_X_WIDTH - 6), y: 10 + Math.random() * 80, remaining: 10000};
     sunDrops.push(drop);
     renderSun(drop);
 }
@@ -23,7 +23,7 @@ function spawnSun() {
 function spawnPlantSun(plant) {
     const drop = {
         id: crypto.randomUUID(),
-        x: Math.min(95, Math.max(5, plant.col * 10 + 5 + Math.random() * 6 - 3)),
+        x: Math.min(BOARD_X_START + BOARD_X_WIDTH - 2, Math.max(BOARD_X_START + 2, boardColCenter(plant.col) + Math.random() * 4 - 2)),
         y: Math.min(92, Math.max(8, rowCenter(plant.row) + Math.random() * 8 - 4)),
         remaining: 10000,
         ownerId: plant.ownerId
@@ -116,7 +116,7 @@ function spawnZombie() {
         row,
 
         x:
-            105,
+            96,
 
         hp:
             type.hp * difficultyFactor *
@@ -296,7 +296,7 @@ function updatePlants() {
             continue;
         }
         if (["wallnut", "tallnut", "primalwallnut"].includes(plant.plantId)) continue;
-        const x = plant.col * 10 + 5;
+        const x = boardColCenter(plant.col);
         const targets = zombies.filter(z => z.hp > 0 && z.row === plant.row && z.x >= x - 3).sort((a, b) => a.x - b.x);
         if (plant.plantId === "cherry") {
             if (plant.age < 800) continue;
@@ -323,9 +323,9 @@ function queueAttack(plant, target) {
     const event = {
         id: crypto.randomUUID(),
         plantId: plant.plantId,
-        fromX: plant.col * 10 + 8,
+        fromX: boardColCenter(plant.col) + 2,
         fromY: rowCenter(plant.row),
-        toX: Math.max(plant.col * 10 + 8, target.x),
+        toX: Math.max(boardColCenter(plant.col) + 2, target.x),
         toY: rowCenter(target.row)
     };
     attackEvents.push(event);
@@ -366,7 +366,7 @@ function updateZombies() {
             document.querySelector(`.zombie[data-id="${zombie.id}"]`)?.remove();
             continue;
         }
-        const blocker = boardPlants.find(p => p.row === zombie.row && Math.abs(zombie.x - (p.col * 10 + 5)) < 5);
+        const blocker = boardPlants.find(p => p.row === zombie.row && Math.abs(zombie.x - boardColCenter(p.col)) < 4);
         if (blocker) {
             blocker.health -= 1.2;
             if (blocker.health <= 0) removePlant(blocker.id);
@@ -376,7 +376,7 @@ function updateZombies() {
         zombie.slow = Math.max(0, (zombie.slow ?? 0) - 100);
         const element = document.querySelector(`.zombie[data-id="${zombie.id}"]`);
         if (element) element.style.left = `${zombie.x}%`;
-        if (zombie.x < 0) {
+        if (zombie.x < 5) {
             void loseGame();
             return;
         }
