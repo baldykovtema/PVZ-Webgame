@@ -354,6 +354,7 @@ function plantAt(row, col, plantId = activePlantId, owner = profile.username, ow
     };
     boardPlants.push(boardPlant);
     renderBoardPlant(boardPlant);
+    spawnGameEffect("plant", boardColCenter(col), rowCenter(row));
 }
 
 

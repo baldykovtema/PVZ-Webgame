@@ -47,11 +47,27 @@ function renderSun(drop) {
     document.getElementById("lawn").appendChild(element);
 }
 
+function spawnGameEffect(type, x, y, symbol = "") {
+    const lawn = document.getElementById("lawn");
+    if (!lawn) return;
+    const effect = document.createElement("span");
+    effect.className = `game-effect game-effect-${type}`;
+    effect.setAttribute("aria-hidden", "true");
+    effect.textContent = symbol;
+    effect.style.left = `${x}%`;
+    effect.style.top = `${y}%`;
+    lawn.appendChild(effect);
+    effect.addEventListener("animationend", () => effect.remove(), {once: true});
+    setTimeout(() => effect.remove(), 1000);
+}
+
 function collectSun(id, ownerId = currentUser?.id) {
     if (!gameRunning || endingGame) return;
     const index = sunDrops.findIndex(drop => drop.id === id);
     if (index < 0) return;
     if (sunDrops[index].ownerId && sunDrops[index].ownerId !== ownerId) return;
+    const drop = sunDrops[index];
+    spawnGameEffect("spark", drop.x, drop.y, "+25");
     sunDrops.splice(index, 1);
     document.querySelector(`.sun[data-id="${id}"]`)?.remove();
     addPlayerSun(ownerId, 25);
@@ -302,10 +318,12 @@ function updatePlants() {
         const targets = zombies.filter(z => z.hp > 0 && z.row === plant.row && z.x >= x - 3).sort((a, b) => a.x - b.x);
         if (plant.plantId === "cherry") {
             if (plant.age < 800) continue;
+            spawnGameEffect("blast", x, rowCenter(plant.row), "💥");
             zombies.filter(z => Math.abs(z.row - plant.row) <= 1 && Math.abs(z.x - x) <= 20).forEach(z => z.hp -= 1000);
             removePlant(plant.id);
         } else if (plant.plantId === "potatomine") {
             if (plant.age >= 3000 && targets.some(z => Math.abs(z.x - x) < 6)) {
+                spawnGameEffect("blast", x, rowCenter(plant.row), "💥");
                 targets.filter(z => Math.abs(z.x - x) < 12).forEach(z => z.hp -= 1000);
                 removePlant(plant.id);
             }
@@ -342,7 +360,12 @@ function renderAttack(event) {
     if (!lawn) return;
 
     const projectile = document.createElement("div");
-    projectile.className = `projectile ${event.plantId === "bokchoy" ? "punch" : event.plantId}`;
+    const projectileKind = ["icepea", "snowpea", "wintermelon"].includes(event.plantId)
+        ? "ice-shot"
+        : event.plantId === "firepea" ? "fire-shot"
+        : event.plantId === "electricpea" ? "electric-shot"
+        : event.plantId === "bokchoy" ? "punch" : "pea-shot";
+    projectile.className = `projectile ${projectileKind}`;
     projectile.style.left = `${event.fromX}%`;
     projectile.style.top = `${event.fromY}%`;
     lawn.appendChild(projectile);
@@ -357,13 +380,19 @@ function renderAttack(event) {
         projectile.style.top = `${event.toY}%`;
     });
 
-    setTimeout(() => projectile.remove(), 1500);
+    const flightTime = 1450;
+    setTimeout(() => {
+        projectile.remove();
+        spawnGameEffect(projectileKind === "ice-shot" ? "frost" : projectileKind === "electric-shot" ? "zap" : "hit",
+            event.toX, event.toY, projectileKind === "electric-shot" ? "⚡" : projectileKind === "ice-shot" ? "❄" : "✦");
+    }, flightTime);
 }
 
 
 function updateZombies() {
     for (const zombie of [...zombies]) {
         if (zombie.hp <= 0) {
+            spawnGameEffect("poof", zombie.x, rowCenter(zombie.row), "💨");
             zombies = zombies.filter(z => z.id !== zombie.id);
             document.querySelector(`.zombie[data-id="${zombie.id}"]`)?.remove();
             continue;
@@ -377,7 +406,10 @@ function updateZombies() {
         }
         zombie.slow = Math.max(0, (zombie.slow ?? 0) - 100);
         const element = document.querySelector(`.zombie[data-id="${zombie.id}"]`);
-        if (element) element.style.left = `${zombie.x}%`;
+        if (element) {
+            element.style.left = `${zombie.x}%`;
+            element.classList.toggle("slowed", (zombie.slow ?? 0) > 0);
+        }
         if (zombie.x < 5) {
             void loseGame();
             return;

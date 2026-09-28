@@ -636,9 +636,122 @@ button.my-plant {
     transition: left 1.4s linear, top 1.4s linear;
 }
 
-.projectile.icepea {
-    background: #77dfff;
-    border-color: #d6f8ff;
+.projectile.ice-shot {
+    background: #8beaff;
+    border-color: #e5fcff;
+    box-shadow: 0 0 12px rgba(95, 220, 255, .95);
+}
+
+.projectile.fire-shot {
+    background: #ff7a35;
+    border-color: #fff0b0;
+    box-shadow: 0 0 14px rgba(255, 84, 23, .95);
+}
+
+.projectile.electric-shot {
+    background: #fff36b;
+    border-color: #fffde0;
+    box-shadow: 0 0 16px #ffe34f;
+    animation: electricPulse .18s infinite alternate;
+}
+
+.projectile.pea-shot {
+    box-shadow: 0 0 11px rgba(160, 255, 120, .95);
+}
+
+.game-effect {
+    position: absolute;
+    z-index: 8;
+    display: grid;
+    place-items: center;
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+    font-weight: 900;
+    text-shadow: 0 1px 5px rgba(0, 0, 0, .8);
+}
+
+.game-effect-blast {
+    width: clamp(54px, 10vw, 100px);
+    height: clamp(54px, 10vw, 100px);
+    border: 3px solid rgba(255, 209, 91, .95);
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(255, 245, 145, .9), rgba(255, 105, 35, .7) 45%, transparent 72%);
+    font-size: clamp(32px, 6vw, 58px);
+    animation: blastBurst .65s ease-out forwards;
+}
+
+.game-effect-spark,
+.game-effect-hit,
+.game-effect-frost,
+.game-effect-zap,
+.game-effect-poof {
+    font-size: clamp(20px, 4vw, 38px);
+    animation: effectPop .55s ease-out forwards;
+}
+
+.game-effect-spark {
+    color: #fff17a;
+    font-size: clamp(16px, 2.5vw, 25px);
+}
+
+.game-effect-frost { color: #a9efff; }
+.game-effect-zap { color: #fff36b; }
+.game-effect-poof { opacity: .8; }
+
+.game-effect-plant {
+    width: 8%;
+    aspect-ratio: 1;
+    border: 3px solid rgba(180, 255, 125, .9);
+    border-radius: 50%;
+    animation: plantPulse .45s ease-out forwards;
+}
+
+.zombie.slowed {
+    filter: hue-rotate(145deg) drop-shadow(0 0 7px rgba(88, 220, 255, .85));
+}
+
+.zombie.slowed::after {
+    content: "❄";
+    position: absolute;
+    top: -12%;
+    right: -18%;
+    color: #b8f3ff;
+    font-size: .45em;
+    animation: iceTwinkle .5s ease-in-out infinite alternate;
+}
+
+@keyframes effectPop {
+    0% { opacity: 1; scale: .35; }
+    55% { opacity: 1; scale: 1.25; }
+    100% { opacity: 0; scale: 1.7; }
+}
+
+@keyframes blastBurst {
+    0% { opacity: .95; scale: .2; }
+    60% { opacity: .9; scale: 1.2; }
+    100% { opacity: 0; scale: 1.7; }
+}
+
+@keyframes plantPulse {
+    from { opacity: .9; scale: .35; }
+    to { opacity: 0; scale: 1.8; }
+}
+
+@keyframes electricPulse {
+    from { scale: .85; }
+    to { scale: 1.2; }
+}
+
+@keyframes iceTwinkle {
+    from { opacity: .45; }
+    to { opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .projectile, .game-effect, .zombie.slowed::after {
+        animation-duration: .01ms !important;
+        transition-duration: .01ms !important;
+    }
 }
 
 .projectile.firepea {
