@@ -57,9 +57,106 @@ function spawnGameEffect(type, x, y, symbol = "") {
     effect.style.left = `${x}%`;
     effect.style.top = `${y}%`;
     lawn.appendChild(effect);
-    effect.addEventListener("animationend", () => effect.remove(), {once: true});
+    if (typeof effect.addEventListener === "function") {
+        effect.addEventListener("animationend", () => effect.remove(), {once: true});
+    }
     setTimeout(() => effect.remove(), 1000);
 }
+
+function playGameSound(kind = "plant") {
+    if (!soundEnabled) return;
+    const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+    if (!AudioContextClass) return;
+    audioContext ||= new AudioContextClass();
+    if (audioContext.state === "suspended") void audioContext.resume();
+    const now = audioContext.currentTime;
+    const settings = {
+        plant: [520, 760, .09, "sine"],
+        sun: [880, 1180, .12, "sine"],
+        shot: [300, 190, .055, "triangle"],
+        ice: [1050, 620, .14, "sine"],
+        fire: [180, 90, .16, "sawtooth"],
+        blast: [110, 45, .3, "sawtooth"],
+        zombie: [240, 110, .18, "triangle"]
+    }[kind] || [440, 330, .1, "sine"];
+    const [start, end, duration, type] = settings;
+    const oscillator = audioContext.createOscillator();
+    const gain = audioContext.createGain();
+    oscillator.type = type;
+    oscillator.frequency.setValueAtTime(start, now);
+    oscillator.frequency.exponentialRampToValueAtTime(Math.max(1, end), now + duration);
+    gain.gain.setValueAtTime(.0001, now);
+    gain.gain.exponentialRampToValueAtTime(kind === "blast" ? .12 : .055, now + .012);
+    gain.gain.exponentialRampToValueAtTime(.0001, now + duration);
+    oscillator.connect(gain);
+    gain.connect(audioContext.destination);
+    oscillator.start(now);
+    oscillator.stop(now + duration + .02);
+}
+
+function toggleGameSound() {
+    soundEnabled = !soundEnabled;
+    try { window.localStorage?.setItem("pvzSoundEnabled", String(soundEnabled)); } catch {}
+    const button = document.getElementById("soundToggleButton");
+    if (button) {
+        button.textContent = soundEnabled ? "🔊" : "🔇";
+        button.setAttribute("aria-label", soundEnabled ? "Выключить звук" : "Включить звук");
+        button.title = soundEnabled ? "Выключить звук" : "Включить звук";
+    }
+    if (soundEnabled) playGameSound("sun");
+}
+
+function saveBackgroundGame() {
+    if (!gameRunning || endingGame || gameMode === "online" || gameMode === "mini") return;
+    try {
+        const storage = window.localStorage;
+        if (!storage) return;
+        storage.setItem("pvzBackgroundGame", JSON.stringify({
+            mode: gameMode,
+            level: currentLevel,
+            slot: infiniteSlot,
+            savedAt: Date.now(),
+            state: captureGame()
+        }));
+    } catch (error) {
+        console.error("Не удалось сохранить текущую игру локально:", error);
+    }
+}
+
+function clearBackgroundGame() {
+    try { window.localStorage?.removeItem("pvzBackgroundGame"); } catch {}
+}
+
+function resumeBackgroundGame() {
+    let saved;
+    try {
+        const storage = window.localStorage;
+        if (!storage) return;
+        saved = JSON.parse(storage.getItem("pvzBackgroundGame") || "null");
+    } catch {
+        clearBackgroundGame();
+        return;
+    }
+    if (!saved?.state || !["campaign", "infinite"].includes(saved.mode)) return;
+    const ageMinutes = Math.floor((Date.now() - saved.savedAt) / 60000);
+    if (!window.confirm(`Найдено сохранение: ${saved.mode === "infinite" ? "бесконечная игра" : `уровень ${saved.level}`} · волна ${saved.state.wave}. Продолжить?`)) {
+        clearBackgroundGame();
+        return;
+    }
+    gameMode = saved.mode;
+    currentLevel = saved.level || currentLevel;
+    infiniteSlot = saved.slot ?? null;
+    selectedPlants = filterUnlockedPlants(saved.state.selectedPlants, profile?.unlocked_level || currentLevel);
+    startGame(saved.state);
+    if (ageMinutes >= 1) console.info(`Игра восстановлена из сохранения (${ageMinutes} мин. назад).`);
+}
+
+if (typeof document.addEventListener === "function") {
+    document.addEventListener("visibilitychange", () => {
+        if (document.visibilityState === "hidden") saveBackgroundGame();
+    });
+}
+if (typeof window.addEventListener === "function") window.addEventListener("pagehide", saveBackgroundGame);
 
 function collectSun(id, ownerId = currentUser?.id) {
     if (!gameRunning || endingGame) return;
@@ -67,6 +164,7 @@ function collectSun(id, ownerId = currentUser?.id) {
     if (index < 0) return;
     if (sunDrops[index].ownerId && sunDrops[index].ownerId !== ownerId) return;
     const drop = sunDrops[index];
+    playGameSound("sun");
     spawnGameEffect("spark", drop.x, drop.y, "+25");
     sunDrops.splice(index, 1);
     document.querySelector(`.sun[data-id="${id}"]`)?.remove();
@@ -318,11 +416,13 @@ function updatePlants() {
         const targets = zombies.filter(z => z.hp > 0 && z.row === plant.row && z.x >= x - 3).sort((a, b) => a.x - b.x);
         if (plant.plantId === "cherry") {
             if (plant.age < 800) continue;
+            playGameSound("blast");
             spawnGameEffect("blast", x, rowCenter(plant.row), "💥");
             zombies.filter(z => Math.abs(z.row - plant.row) <= 1 && Math.abs(z.x - x) <= 20).forEach(z => z.hp -= 1000);
             removePlant(plant.id);
         } else if (plant.plantId === "potatomine") {
             if (plant.age >= 3000 && targets.some(z => Math.abs(z.x - x) < 6)) {
+                playGameSound("blast");
                 spawnGameEffect("blast", x, rowCenter(plant.row), "💥");
                 targets.filter(z => Math.abs(z.x - x) < 12).forEach(z => z.hp -= 1000);
                 removePlant(plant.id);
@@ -331,6 +431,7 @@ function updatePlants() {
             const target = targets[0];
             if (plant.plantId === "bokchoy" && target.x - x > 15) continue;
             const damage = {repeater: 40, firepea: 45, bokchoy: 50, corn: 25, cactus: 30, threepeater: 35, melonpult: 55, wintermelon: 50, electricpea: 45, primalpea: 40};
+            playGameSound(["icepea", "snowpea", "wintermelon"].includes(plant.plantId) ? "ice" : plant.plantId === "firepea" ? "fire" : "shot");
             target.hp -= damage[plant.plantId] ?? 20;
             queueAttack(plant, target);
             if (["icepea", "snowpea", "wintermelon"].includes(plant.plantId)) target.slow = 3000;
@@ -392,6 +493,7 @@ function renderAttack(event) {
 function updateZombies() {
     for (const zombie of [...zombies]) {
         if (zombie.hp <= 0) {
+            playGameSound("zombie");
             spawnGameEffect("poof", zombie.x, rowCenter(zombie.row), "💨");
             zombies = zombies.filter(z => z.id !== zombie.id);
             document.querySelector(`.zombie[data-id="${zombie.id}"]`)?.remove();
@@ -421,6 +523,7 @@ async function loseGame() {
     if (endingGame) return;
     endingGame = true;
     stopGame();
+    clearBackgroundGame();
     if (gameMode === "online") return endOnlineMatch("🧟 Зомби добрались до дома. Поражение!");
     alert("🧟 Зомби добрались до дома. Попробуй ещё раз!");
     if (gameMode === "mini") {
@@ -463,6 +566,7 @@ async function finishLevel() {
     stopGame();
     if (gameMode === "online") return endOnlineMatch("🎉 Все 10 волн пройдены!");
     if (gameMode === "mini") {
+        clearBackgroundGame();
         alert("🎯 Мини-игра пройдена!");
         activeMiniGame = null;
         showMenu();
@@ -545,6 +649,7 @@ async function finishLevel() {
     );
 
 
+    clearBackgroundGame();
     showMap();
 
 }
@@ -566,11 +671,15 @@ async function exitGame() {
                 startGameLoops();
                 return;
             }
+            clearBackgroundGame();
             await showSaves();
         } finally {
             savingGame = false;
         }
-    } else showMap();
+    } else {
+        clearBackgroundGame();
+        showMap();
+    }
 }
 
 function captureGame() {

@@ -333,6 +333,7 @@ async function loadUser() {
 
     showMenu();
     subscribeInvites();
+    resumeBackgroundGame();
 
 }
 

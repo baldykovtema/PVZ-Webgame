@@ -43,6 +43,12 @@ let plantSelectionCancel = null;
 let matchPlantSelections = {};
 let endingGame = false;
 let savingGame = false;
+let autosaveTimer = null;
+let audioContext = null;
+let soundEnabled = true;
+try {
+    soundEnabled = window.localStorage?.getItem("pvzSoundEnabled") !== "false";
+} catch {}
 let lobbyPollTimer = null;
 let matchChannel = null;
 let matchTimer = null;

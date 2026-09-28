@@ -49,7 +49,17 @@ function startGame(saved = null) {
     sunDrops.forEach(renderSun);
     updateSun();
     showScreen("gameScreen");
+    const soundButton = document.getElementById("soundToggleButton");
+    if (soundButton) {
+        soundButton.textContent = soundEnabled ? "🔊" : "🔇";
+        soundButton.setAttribute("aria-label", soundEnabled ? "Выключить звук" : "Включить звук");
+    }
     gameRunning = true;
+    clearInterval(autosaveTimer);
+    if (gameMode !== "online") {
+        autosaveTimer = setInterval(saveBackgroundGame, 15000);
+        saveBackgroundGame();
+    }
     if (gameMode !== "online" || isMatchHost()) startGameLoops();
 }
 
@@ -354,6 +364,7 @@ function plantAt(row, col, plantId = activePlantId, owner = profile.username, ow
     };
     boardPlants.push(boardPlant);
     renderBoardPlant(boardPlant);
+    playGameSound("plant");
     spawnGameEffect("plant", boardColCenter(col), rowCenter(row));
 }
 
