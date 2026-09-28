@@ -103,7 +103,7 @@ async function renderSaves() {
 
 
             const savedSun =
-                save.save_data?.sun ?? 150;
+                save.save_data?.sun ?? 125;
 
 
             box.innerHTML = `
@@ -167,7 +167,7 @@ async function newInfiniteGame(slot) {
             if (savingGame) return;
             savingGame = true;
             try {
-                const saveData = {version: 1, wave: 1, sun: 150, plants: [], zombies: [], sunDrops: [],
+                const saveData = {version: 1, wave: 1, sun: 125, plants: [], zombies: [], sunDrops: [],
                     selectedPlants: [...selectedPlants], location: "infinite"};
                 if (await saveInfinite(slot, saveData)) startGame(saveData);
             } finally {

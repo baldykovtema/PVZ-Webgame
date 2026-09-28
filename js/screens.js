@@ -194,7 +194,7 @@ function startMiniGame(id) {
     const miniSave = {
         version: 1,
         wave: 1,
-        sun: id === "sunrush" ? 400 : id === "night" ? 125 : id === "boss" ? 350 : 250,
+        sun: id === "sunrush" ? 300 : id === "night" ? 100 : id === "boss" ? 250 : 175,
         plants: [],
         zombies: [],
         sunDrops: [],

@@ -9,7 +9,7 @@ let currentLevel = 1;
 
 let selectedPlants = [];
 
-let sun = 150;
+let sun = 125;
 let playerSuns = {};
 
 let shovelMode = false;

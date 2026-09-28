@@ -121,11 +121,13 @@ function spawnZombie() {
         hp:
             type.hp * difficultyFactor *
             (1 + currentWave * .12) *
+            (gameMode === "campaign" ? 1 + Math.min(.75, Math.max(0, currentLevel - 1) * .015) : 1) *
             (gameMode === "mini" && activeMiniGame === "boss" ? 2.5 : 1),
 
         speed:
             type.speed *
             (1 + currentWave * .04) *
+            (gameMode === "campaign" ? 1 + Math.min(.18, Math.max(0, currentLevel - 1) * .004) : 1) *
             (gameMode === "mini" && activeMiniGame === "boss" ? 1.2 : 1),
 
         emoji:
@@ -260,7 +262,7 @@ function waveSize() {
     if (gameMode === "mini" && activeMiniGame === "rush") return 7 + currentWave * 3;
     if (gameMode === "mini" && activeMiniGame === "wall") return 3 + currentWave * 2;
     if (gameMode === "mini" && activeMiniGame === "boss") return 12 + currentWave * 5;
-    return 4 + currentWave * 2;
+    return 4 + currentWave * 2 + (gameMode === "campaign" ? Math.floor(Math.max(0, currentLevel - 1) / 10) : 0);
 }
 
 function getSpawnDelay() {
@@ -279,7 +281,7 @@ function getSunDelay() {
     if (gameMode === "mini" && activeMiniGame === "garden") return 2400;
     if (gameMode === "mini" && activeMiniGame === "night") return 6500;
 
-    return 4000;
+    return 6000;
 }
 
 function updatePlants() {
@@ -287,7 +289,7 @@ function updatePlants() {
         plant.age = (plant.age ?? 0) + 100;
         plant.cooldown = Math.max(0, (plant.cooldown ?? 0) - 100);
         if (["sunflower", "twinflower", "sunshroom"].includes(plant.plantId)) {
-            const sunInterval = gameMode === "mini" && activeMiniGame === "garden" ? 4000 : 8000;
+            const sunInterval = gameMode === "mini" && activeMiniGame === "garden" ? 5000 : 10000;
             if (plant.cooldown === 0 && plant.age >= sunInterval) {
                 spawnPlantSun(plant);
                 if (plant.plantId === "twinflower") spawnPlantSun(plant);

@@ -14,7 +14,7 @@ function startGame(saved = null) {
     endingGame = false;
     document.getElementById("retryProgressButton").hidden = true;
     document.getElementById("exitGameButton").textContent = gameMode === "infinite" ? "💾 Сохранить и выйти" : "← Выйти";
-    sun = saved?.sun ?? 150;
+    sun = saved?.sun ?? 125;
     currentWave = saved?.wave ?? 1;
     boardPlants = structuredClone(saved?.plants ?? []);
     zombies = structuredClone(saved?.zombies ?? []);
@@ -79,7 +79,7 @@ function isMatchHost() {
 function initializePlayerSuns(savedPlayerSuns = null) {
     playerSuns = {};
     for (const player of matchPlayers) {
-        playerSuns[player.user_id] = savedPlayerSuns?.[player.user_id] ?? 150;
+        playerSuns[player.user_id] = savedPlayerSuns?.[player.user_id] ?? 125;
     }
 }
 
@@ -90,7 +90,7 @@ function getSunOwnerId(ownerId = currentUser?.id) {
 
 function getPlayerSun(ownerId = currentUser?.id) {
     const sunOwnerId = getSunOwnerId(ownerId);
-    return sunOwnerId ? (playerSuns[sunOwnerId] ?? 150) : sun;
+    return sunOwnerId ? (playerSuns[sunOwnerId] ?? 125) : sun;
 }
 
 function setPlayerSun(ownerId, value) {
