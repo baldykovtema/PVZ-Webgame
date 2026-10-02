@@ -26,6 +26,7 @@ class Element {
         this.textContent = '';
         this.value = '';
         this.classList = {
+            contains: value => this.className.split(" ").includes(value),
             add: value => { this.className += ` ${value}`; },
             remove: value => { this.className = this.className.split(' ').filter(x => x !== value).join(' '); },
             toggle: value => { this.className.includes(value) ? this.classList.remove(value) : this.classList.add(value); }
@@ -141,7 +142,7 @@ function setup({backend = createBackend(), id = 'host'} = {}) {
     let timerId = 0;
     const context = vm.createContext({
         window: {supabase: {createClient: () => backend.client}},
-        document: {getElementById: id => root.querySelector('#' + id), createElement: tag => new Element(tag),
+        document: {documentElement: root, getElementById: id => root.querySelector('#' + id), createElement: tag => new Element(tag),
             querySelector: selector => root.querySelector(selector), querySelectorAll: selector => root.querySelectorAll(selector)},
         console: {log() {}, error() {}}, crypto: webcrypto, structuredClone,
         alert: message => alerts.push(message), confirm: () => true,
@@ -150,7 +151,7 @@ function setup({backend = createBackend(), id = 'host'} = {}) {
     });
     for (const {filename, source} of scripts) vm.runInContext(source, context, {filename});
     const run = code => vm.runInContext(code, context);
-    run(`currentUser = {id: '${id}'}; profile = {username: '${id === 'host' ? 'Host' : 'Guest'}', unlocked_level: 30}; selectedPlants = ['peashooter', 'sunflower', 'wallnut', 'potatomine', 'cherry', 'icepea'];`);
+    run(`currentUser = {id: '${id}'}; profile = {username: '${id === 'host' ? 'Host' : 'Guest'}', unlocked_level: 30}; currentLevel = 30; selectedPlants = ['peashooter', 'sunflower', 'wallnut', 'potatomine', 'cherry', 'icepea'];`);
     return {run, root, alerts, backend, context, async tick(ms, count = 1) {
         for (let i = 0; i < count; i++) {
             for (const [id, timer] of [...intervals]) if (intervals.has(id) && timer.ms === ms) await timer.callback();
@@ -165,25 +166,25 @@ test('empty lawn click plants selected card and charges the correct cost', () =>
     app.run('startGame()');
     const buttons = app.root.querySelector('#myPlantList').children;
     buttons[1].onclick();
-    app.run('handleLawnClick({target: document.getElementById("lawn"), currentTarget: document.getElementById("lawn"), clientX: 250, clientY: 150})');
+    app.run('handleLawnClick({target: document.getElementById("lawn"), currentTarget: document.getElementById("lawn"), clientX: 300, clientY: 150})');
     assert.equal(app.run('boardPlants[0].plantId'), 'sunflower');
     assert.equal(app.run('boardPlants[0].row'), 1);
     assert.equal(app.run('boardPlants[0].col'), 2);
-    assert.equal(app.run('sun'), 100);
+    assert.equal(app.run('sun'), 75);
     assert.equal(app.run('activePlantId'), 'sunflower');
 });
 
 test('peashooter damages zombies, sunflower produces sun, wallnut blocks and takes damage', () => {
     const app = setup(); app.run('startGame(); sun = 1000; plantAt(0, 0); plantAt(1, 0, "sunflower"); plantAt(2, 0, "wallnut"); zombies = [{id:"z",row:0,x:50,hp:100,speed:1}]; updatePlants()');
     assert.equal(app.run('zombies[0].hp'), 80);
-    app.run('for (let i=0;i<79;i++) updatePlants()');
+    app.run('for (let i=0;i<99;i++) updatePlants()');
     assert.equal(app.run('sun'), 800);
     assert.equal(app.run('sunDrops.length'), 1);
     app.run('collectSun(sunDrops[0].id)');
     assert.equal(app.run('sun'), 825);
-    app.run('zombies = [{id:"block",row:2,x:8,hp:100,speed:1}]; updateZombies()');
-    assert.equal(app.run('zombies[0].x'), 8);
-    assert.ok(app.run('boardPlants[2].health < 600'));
+    app.run('zombies = [{id:"block",row:2,x:boardColCenter(0),hp:100,speed:1}]; updateZombies()');
+    assert.equal(app.run('zombies[0].x'), app.run('boardColCenter(0)'));
+    assert.ok(app.run('boardPlants[2].health < 800'));
 });
 
 test('bombs wait for fuse, mines arm before exploding, ice slows targets', () => {
@@ -191,7 +192,7 @@ test('bombs wait for fuse, mines arm before exploding, ice slows targets', () =>
     assert.equal(app.run('zombies[0].hp'), 500);
     app.run('for(let i=0;i<7;i++) updatePlants(); updateZombies()');
     assert.equal(app.run('zombies.length'), 0);
-    app.run('plantAt(0,0,"potatomine"); zombies = [{id:"m",row:0,x:8,hp:500,speed:1}]; updatePlants()');
+    app.run('plantAt(0,0,"potatomine"); zombies = [{id:"m",row:0,x:boardColCenter(0),hp:500,speed:1}]; updatePlants()');
     assert.equal(app.run('zombies[0].hp'), 500);
     app.run('for(let i=0;i<29;i++) updatePlants(); updateZombies()');
     assert.equal(app.run('zombies.length'), 0);
@@ -225,12 +226,13 @@ test('wave advances only after all scheduled zombies are defeated', async () => 
 
 test('infinite save round-trip preserves zero sun, plants, enemies, wave and spawn progress', async () => {
     const app = setup();
-    await app.run('newInfiniteGame(2)');
+    await app.run('newInfiniteGame(2); selectedPlants = ["peashooter"]; plantSelectionStart()');
     app.run('sun=1000; plantAt(1,2); sun=0; currentWave=12; waveSpawned=7; spawnElapsed=300; zombies=[{id:"saved",row:2,x:70,hp:50,speed:.35}]; showSaves = async () => {}');
     await app.run('exitGame()');
     assert.equal(app.run('gameRunning'), false);
     assert.equal(app.backend.tables.infinite_saves[0].save_data.sun, 0);
     await app.run('continueInfinite(2)');
+    app.run('confirmPlantSelection()');
     assert.equal(app.run('sun'), 0);
     assert.equal(app.run('currentWave'), 12);
     assert.equal(app.run('boardPlants[0].col'), 2);
@@ -244,7 +246,7 @@ test('infinite save round-trip preserves zero sun, plants, enemies, wave and spa
 });
 
 test('failed save resumes game and does not show success or exit', async () => {
-    const app = setup(); await app.run('newInfiniteGame(1)');
+    const app = setup(); await app.run('newInfiniteGame(1); selectedPlants = ["peashooter"]; plantSelectionStart()');
     app.backend.fail('offline');
     app.run('let exited = false; showSaves = async () => { exited = true; }');
     await app.run('exitGame()');
@@ -255,7 +257,7 @@ test('failed save resumes game and does not show success or exit', async () => {
 
 test('sun cannot be collected twice', () => {
     const app = setup(); app.run('startGame(); spawnSun(); const id = sunDrops[0].id; collectSun(id); collectSun(id)');
-    assert.equal(app.run('sun'), 175);
+    assert.equal(app.run('sun'), 150);
 });
 
 test('two players start one shared simulation with separate sun balances and synchronize planting, sun and end', async () => {
@@ -277,9 +279,8 @@ test('two players start one shared simulation with separate sun balances and syn
     await host.tick(250);
     assert.equal(host.run('boardPlants[0].owner'), 'Guest');
     assert.equal(guest.run('boardPlants[0].owner'), 'Guest');
-    assert.equal(guest.run('playerSuns.guest'), 100);
-    assert.equal(guest.run('playerSuns.host'), 150);
-    assert.equal(host.run('selectedPlants.length'), host.run('plants.length'));
+    assert.equal(guest.run('playerSuns.guest'), 75);
+    assert.equal(guest.run('playerSuns.host'), 125);
     host.run('spawnSun()'); await host.tick(250);
     assert.equal(host.run('sunDrops.length'), 2);
     const hostDrop = host.run('sunDrops.find(drop => drop.ownerId === "host").id');
@@ -289,12 +290,12 @@ test('two players start one shared simulation with separate sun balances and syn
     assert.ok(guest.root.querySelector(`.sun[data-id="${guestDrop}"]`));
     assert.equal(guest.root.querySelector(`.sun[data-id="${hostDrop}"]`), null);
     await guest.run('sendMatchAction({type:"sun",id:sunDrops.find(drop => drop.ownerId === "host").id})');
-    assert.equal(host.run('playerSuns.guest'), 100);
+    assert.equal(host.run('playerSuns.guest'), 75);
     assert.equal(host.run('sunDrops.length'), 2);
     await guest.run('sendMatchAction({type:"sun",id:sunDrops.find(drop => drop.ownerId === "guest").id})');
     await host.tick(250);
-    assert.equal(guest.run('playerSuns.guest'), 125);
-    assert.equal(guest.run('playerSuns.host'), 150);
+    assert.equal(guest.run('playerSuns.guest'), 100);
+    assert.equal(guest.run('playerSuns.host'), 125);
     await guest.run('sendMatchAction({type:"remove",id:boardPlants[0].id})');
     await host.tick(250);
     assert.equal(guest.run('boardPlants.length'), 0);

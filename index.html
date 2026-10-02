@@ -4,6 +4,12 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
+<script>
+if (/iPhone|iPod|Android.*Mobile|Windows Phone|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
+    document.documentElement.classList.add("phone-device");
+}
+</script>
+
 <title>🌱 Растения против Зомби</title>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -12,6 +18,10 @@
 </head>
 
 <body>
+
+<div id="phoneBlock" role="alert">
+    Не преднозначено для телефона попробуйте зайти на компютере или планшете
+</div>
 
 
 <!-- =========================
@@ -326,14 +336,15 @@
 
         <button
             class="secondary"
-            onclick="showMap()">
+            id="plantSelectionBackButton"
+            onclick="cancelPlantSelection()">
 
             ← Назад
 
         </button>
 
         <b id="selectedLevelTitle">
-            Уровень
+            Выбор растений
         </b>
 
     </div>
@@ -367,9 +378,10 @@
 
         <button
             class="primary"
-            onclick="startGame()">
+            id="startPlantSelectionButton"
+            onclick="confirmPlantSelection()">
 
-            🎮 НАЧАТЬ УРОВЕНЬ
+            🎮 НАЧАТЬ ИГРУ
 
         </button>
 
@@ -389,11 +401,16 @@
         <button
             id="exitGameButton"
             class="secondary"
+            aria-label="Выйти из игры"
+            title="Выйти из игры"
             onclick="exitGame()">
 
-            ← Выйти
+            ×
 
         </button>
+
+        <button id="soundToggleButton" class="secondary sound-toggle" onclick="toggleGameSound()"
+            aria-label="Выключить звук" title="Выключить звук">🔊</button>
 
 
         <button id="retryProgressButton" class="secondary" hidden onclick="finishLevel()">
@@ -404,7 +421,7 @@
 
             ☀️
             <span id="sunCount">
-                150
+                125
             </span>
 
         </div>
@@ -466,7 +483,7 @@
             </span>
 
             <b id="mySun">
-                150
+                125
             </b>
 
         </div>

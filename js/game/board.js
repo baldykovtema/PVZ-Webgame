@@ -3,6 +3,9 @@
 ===================================================== */
 
 function startGame(saved = null) {
+    if (gameMode !== "online") selectedPlants =
+        filterUnlockedPlants(selectedPlants, gameMode === "campaign" ? currentLevel : profile?.unlocked_level || currentLevel);
+
     if (!selectedPlants.length) {
         alert("Выбери хотя бы одно растение.");
         return;
@@ -11,7 +14,7 @@ function startGame(saved = null) {
     endingGame = false;
     document.getElementById("retryProgressButton").hidden = true;
     document.getElementById("exitGameButton").textContent = gameMode === "infinite" ? "💾 Сохранить и выйти" : "← Выйти";
-    sun = saved?.sun ?? 150;
+    sun = saved?.sun ?? 125;
     currentWave = saved?.wave ?? 1;
     boardPlants = structuredClone(saved?.plants ?? []);
     zombies = structuredClone(saved?.zombies ?? []);
@@ -28,7 +31,9 @@ function startGame(saved = null) {
     document.getElementById("shovelButton").style.background = "";
     document.getElementById("levelGameName").textContent = gameMode === "infinite"
         ? `Бесконечная игра • слот ${infiniteSlot}`
-        : gameMode === "online" ? "Совместная игра • личное солнце" : `Уровень ${currentLevel}`;
+        : gameMode === "online" ? "Совместная игра • личное солнце"
+            : gameMode === "mini" ? getMiniGameTitle()
+                : `Уровень ${currentLevel}`;
     document.getElementById("waveLimit").textContent = isEndless() ? " / ∞" : ` / ${getWaveLimit()}`;
     document.getElementById("waveNumber").textContent = currentWave;
     document.getElementById("chatMessages").innerHTML = "";
@@ -44,7 +49,17 @@ function startGame(saved = null) {
     sunDrops.forEach(renderSun);
     updateSun();
     showScreen("gameScreen");
+    const soundButton = document.getElementById("soundToggleButton");
+    if (soundButton) {
+        soundButton.textContent = soundEnabled ? "🔊" : "🔇";
+        soundButton.setAttribute("aria-label", soundEnabled ? "Выключить звук" : "Включить звук");
+    }
     gameRunning = true;
+    clearInterval(autosaveTimer);
+    if (gameMode !== "online") {
+        autosaveTimer = setInterval(saveBackgroundGame, 15000);
+        saveBackgroundGame();
+    }
     if (gameMode !== "online" || isMatchHost()) startGameLoops();
 }
 
@@ -53,7 +68,18 @@ function isEndless() {
 }
 
 function getWaveLimit() {
+    if (gameMode === "mini") return activeMiniGame === "rush" ? 6 : activeMiniGame === "boss" ? 2 : 5;
     return gameMode === "campaign" ? 5 : 10;
+}
+
+function getMiniGameTitle() {
+    if (activeMiniGame === "sunrush") return "Мини-игра • Солнечный марафон";
+    if (activeMiniGame === "rush") return "Мини-игра • Быстрый натиск";
+    if (activeMiniGame === "wall") return "Мини-игра • Оборона орехами";
+    if (activeMiniGame === "garden") return "Мини-игра • Солнечный сад";
+    if (activeMiniGame === "night") return "Мини-игра • Ночная смена";
+    if (activeMiniGame === "boss") return "Мини-игра • Большая угроза";
+    return "Мини-игра";
 }
 
 function isMatchHost() {
@@ -63,7 +89,7 @@ function isMatchHost() {
 function initializePlayerSuns(savedPlayerSuns = null) {
     playerSuns = {};
     for (const player of matchPlayers) {
-        playerSuns[player.user_id] = savedPlayerSuns?.[player.user_id] ?? 150;
+        playerSuns[player.user_id] = savedPlayerSuns?.[player.user_id] ?? 125;
     }
 }
 
@@ -74,7 +100,7 @@ function getSunOwnerId(ownerId = currentUser?.id) {
 
 function getPlayerSun(ownerId = currentUser?.id) {
     const sunOwnerId = getSunOwnerId(ownerId);
-    return sunOwnerId ? (playerSuns[sunOwnerId] ?? 150) : sun;
+    return sunOwnerId ? (playerSuns[sunOwnerId] ?? 125) : sun;
 }
 
 function setPlayerSun(ownerId, value) {
@@ -112,6 +138,49 @@ function renderPlayersPanel() {
     }
 }
 
+function showNoSunNotice() {
+    if (!document.body) {
+        alert("☀️ Недостаточно солнца!");
+        return;
+    }
+
+    let notice =
+        document.getElementById("noSunNotice");
+
+    if (!notice) {
+        notice =
+            document.createElement("div");
+
+        notice.id =
+            "noSunNotice";
+
+        notice.className =
+            "no-sun-notice";
+
+        notice.textContent =
+            "Не хвотоает денег";
+
+        document.body
+            .appendChild(notice);
+    }
+
+    notice.style.left =
+        `${lastPointerX}px`;
+
+    notice.style.top =
+        `${lastPointerY}px`;
+
+    notice.classList.add("show");
+
+    clearTimeout(showNoSunNotice.timer);
+
+    showNoSunNotice.timer =
+        setTimeout(
+            () => notice.classList.remove("show"),
+            900
+        );
+}
+
 
 function createBoard() {
 
@@ -143,7 +212,7 @@ function createBoard() {
 
 
             cell.style.left =
-                `${col * 10}%`;
+                `${boardColStart(col)}%`;
 
 
             cell.style.top =
@@ -156,14 +225,56 @@ function createBoard() {
 
     }
 
+    const house = document.createElement("div");
+    house.className = "lawn-decoration lawn-house";
+    house.textContent = "🏠";
+    lawn.appendChild(house);
+
+    const mowers = document.createElement("div");
+    mowers.className = "lawn-mowers";
+    for (let row = 0; row < BOARD_ROWS; row++) {
+        const mower = document.createElement("span");
+        mower.className = "lawn-mower";
+        mower.textContent = "🚜";
+        mower.setAttribute("aria-label", "Газонокосилка");
+        mowers.appendChild(mower);
+    }
+    lawn.appendChild(mowers);
+
+    const bushes = document.createElement("div");
+    bushes.className = "lawn-decoration lawn-bushes";
+    for (let row = 0; row < BOARD_ROWS; row++) {
+        const bush = document.createElement("span");
+        bush.className = "lawn-bush";
+        bush.textContent = "🌿";
+        bushes.appendChild(bush);
+    }
+    lawn.appendChild(bushes);
+
 
     lawn.onclick =
         handleLawnClick;
 
+    lawn.onpointermove =
+        trackPointer;
+
+    lawn.onpointerdown =
+        trackPointer;
+
+}
+
+function trackPointer(event) {
+    lastPointerX =
+        event.clientX;
+
+    lastPointerY =
+        event.clientY;
 }
 
 
 function handleLawnClick(event) {
+
+    trackPointer(event);
 
     if (
         event.target !==
@@ -190,11 +301,8 @@ function handleLawnClick(event) {
         rect.top;
 
 
-    const col =
-        Math.floor(
-            x /
-            (rect.width / 10)
-        );
+    const boardX = (x / rect.width * 100 - BOARD_X_START) / BOARD_X_WIDTH;
+    const col = Math.floor(boardX * 10);
 
 
     const row =
@@ -205,6 +313,8 @@ function handleLawnClick(event) {
 
 
     if (
+        boardX < 0 ||
+        boardX >= 1 ||
         col < 0 ||
         col > 9 ||
         row < 0 ||
@@ -237,20 +347,25 @@ function plantAt(row, col, plantId = activePlantId, owner = profile.username, ow
     const exists = boardPlants.find(p => p.row === row && p.col === col);
     if (exists) return;
     const plant = plants.find(p => p.id === plantId);
-    if (!plant || !selectedPlants.includes(plantId)) return;
+    const ownerPlantList = gameMode === "online"
+        ? matchPlantSelections[ownerId] || []
+        : selectedPlants;
+    if (!plant || !ownerPlantList.includes(plantId)) return;
     if (getPlayerSun(ownerId) < plant.cost) {
-        if (owner === profile.username) alert("☀️ Недостаточно солнца!");
+        if (owner === profile.username) showNoSunNotice();
         return;
     }
     setPlayerSun(ownerId, getPlayerSun(ownerId) - plant.cost);
     updateSun();
     const boardPlant = {
         id: crypto.randomUUID(), plantId, row, col, owner, ownerId,
-        health: plantId === "wallnut" ? 600 : 100,
+        health: ["wallnut", "tallnut", "primalwallnut"].includes(plantId) ? 800 : 100,
         cooldown: 0, age: 0
     };
     boardPlants.push(boardPlant);
     renderBoardPlant(boardPlant);
+    playGameSound("plant");
+    spawnGameEffect("plant", boardColCenter(col), rowCenter(row));
 }
 
 
@@ -285,7 +400,7 @@ function renderBoardPlant(boardPlant) {
 
 
     element.style.left =
-        `${boardPlant.col * 10 + 5}%`;
+        `${boardColCenter(boardPlant.col)}%`;
 
 
     element.style.top =
@@ -445,7 +560,10 @@ function toggleShovel() {
 function renderMyPlants() {
     const list = document.getElementById("myPlantList");
     list.innerHTML = "";
-    selectedPlants.forEach(id => {
+    const plantList = gameMode === "online"
+        ? matchPlantSelections[currentUser?.id] || selectedPlants
+        : selectedPlants;
+    plantList.forEach(id => {
         const plant = plants.find(p => p.id === id);
         if (!plant) return;
         const button = document.createElement("button");
@@ -456,6 +574,7 @@ function renderMyPlants() {
         button.style.outline = activePlantId === id ? "3px solid #ffdb60" : "none";
         button.onclick = () => {
             activePlantId = id;
+            selectedPlants = plantList;
             if (shovelMode) toggleShovel();
             renderMyPlants();
         };

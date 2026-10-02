@@ -9,7 +9,7 @@ let currentLevel = 1;
 
 let selectedPlants = [];
 
-let sun = 150;
+let sun = 125;
 let playerSuns = {};
 
 let shovelMode = false;
@@ -33,8 +33,22 @@ let sunElapsed = 0;
 let sunDrops = [];
 let attackEvents = [];
 let renderedAttackEvents = new Set();
+let lastPointerX = 0;
+let lastPointerY = 0;
+let activeMiniGame = null;
+let plantSelectionPool = [];
+let plantSelectionLimit = 10;
+let plantSelectionStart = null;
+let plantSelectionCancel = null;
+let matchPlantSelections = {};
 let endingGame = false;
 let savingGame = false;
+let autosaveTimer = null;
+let audioContext = null;
+let soundEnabled = true;
+try {
+    soundEnabled = window.localStorage?.getItem("pvzSoundEnabled") !== "false";
+} catch {}
 let lobbyPollTimer = null;
 let matchChannel = null;
 let matchTimer = null;

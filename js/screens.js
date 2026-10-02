@@ -4,6 +4,13 @@
 
 function showScreen(id) {
 
+    const plantTooltip =
+        document.getElementById("plant-tooltip");
+
+    if (plantTooltip) {
+        plantTooltip.hidden = true;
+    }
+
     document
         .querySelectorAll(".screen")
         .forEach(screen => {
@@ -81,25 +88,125 @@ function showMap() {
 ===================================================== */
 
 function miniGames() {
+    const parts =
+        getGameModal();
 
-    alert(
+    if (!parts) {
+        startMiniGame("sunrush");
+        return;
+    }
 
-        "🎯 Мини-игры\n\n" +
+    parts.message.textContent =
+        "Выбери мини-игру";
+    parts.message.classList.add("mini-game-heading");
 
-        "🌻 1. Собери солнце\n" +
+    parts.actions.innerHTML =
+        "";
 
-        "🥔 2. Поймай картофель\n" +
+    const games = [
+        {
+            id: "sunrush",
+            name: "Солнечный марафон",
+            description: "Собирай солнца и подготовься к пяти волнам зомби."
+        },
+        {
+            id: "rush",
+            name: "Быстрый натиск",
+            description: "Отрази шесть стремительных волн с увеличенным числом зомби."
+        },
+        {
+            id: "wall",
+            name: "Оборона орехами",
+            description: "Защищай дорожки орехами от пяти волн зомби."
+        },
+        {
+            id: "garden",
+            name: "Солнечный сад",
+            description: "Сажай подсолнухи: они производят солнце в два раза быстрее."
+        },
+        {
+            id: "night",
+            name: "Ночная смена",
+            description: "Переживи пять волн, когда солнце падает реже."
+        },
+        {
+            id: "boss",
+            name: "Большая угроза",
+            description: "Останови две большие волны усиленных зомби."
+        }
+    ];
 
-        "🧟 3. Уничтожь зомби\n" +
+    parts.modal.querySelector(".mini-game-close")?.remove();
+    const closeButton = document.createElement("button");
+    closeButton.className = "mini-game-close";
+    closeButton.type = "button";
+    closeButton.setAttribute("aria-label", "Закрыть выбор мини игр");
+    closeButton.title = "Закрыть";
+    closeButton.textContent = "×";
+    closeButton.onclick = () => { parts.modal.hidden = true; };
+    parts.modal.querySelector(".game-modal-card")?.prepend(closeButton);
 
-        "🌱 4. Посади растения\n" +
+    games.forEach(game => {
+        const card = document.createElement("div");
+        card.className = "mini-game-option";
+        const title = document.createElement("h3");
+        title.textContent = game.name;
+        const description = document.createElement("p");
+        description.textContent = game.description;
+        const button = document.createElement("button");
+        button.className = "primary";
+        button.textContent = "Играть";
+        button.onclick = () => {
+            parts.modal.hidden = true;
+            startMiniGame(game.id);
+        };
+        card.append(title, description, button);
+        parts.actions.appendChild(card);
+    });
 
-        "☀️ 5. Солнечный марафон\n" +
+    parts.modal.hidden =
+        false;
+}
 
-        "🧠 6. Память растений\n\n" +
+function startMiniGame(id) {
+    activeMiniGame =
+        id;
 
-        "Сами мини-игры добавим следующим этапом."
+    gameMode =
+        "mini";
 
-    );
+    infiniteSlot =
+        null;
 
+    currentLevel =
+        Math.max(1, profile?.unlocked_level || 1);
+
+    let plantPool = getUnlockedPlantIds(currentLevel);
+
+    if (id === "wall") {
+        plantPool = filterUnlockedPlants(["peashooter", "sunflower", "wallnut", "icepea", "bokchoy"], currentLevel);
+    }
+
+    if (id === "boss") {
+        plantPool = filterUnlockedPlants(["peashooter", "sunflower", "cherry", "icepea", "repeater"], currentLevel);
+    }
+
+    const miniSave = {
+        version: 1,
+        wave: 1,
+        sun: id === "sunrush" ? 300 : id === "night" ? 100 : id === "boss" ? 250 : 175,
+        plants: [],
+        zombies: [],
+        sunDrops: [],
+        location: "mini"
+    };
+    openPlantSelection({
+        title: getMiniGameTitle(),
+        description: "Выбери растения для этой мини игры.",
+        pool: plantPool,
+        limit: 10,
+        startText: "🎮 НАЧАТЬ МИНИ ИГРУ",
+        onStart: () => startGame({...miniSave, selectedPlants}),
+        onCancel: () => miniGames()
+    });
 }
