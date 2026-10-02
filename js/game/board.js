@@ -357,7 +357,7 @@ function showPlantOwner(boardPlant, event) {
     const owner = document.createElement("span");
     owner.textContent = `👤 Поставил: ${boardPlant.owner}`;
     const health = document.createElement("span");
-    health.textContent = `❤️ Здоровье: ${boardPlant.health}`;
+    health.textContent = `❤️ Здоровье: ${Math.max(0, Math.ceil(boardPlant.health))}`;
     tooltip.append(heading, owner, health);
     tooltip.hidden = false;
     movePlantTooltip(event);

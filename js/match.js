@@ -15,7 +15,7 @@ async function startOnlineMatch(players) {
     matchConnectedAt = Date.now();
     lastMatchMessage = Date.now();
     endingGame = false;
-    selectedPlants = ["peashooter", "sunflower", "wallnut", "potatomine", "cherry", "icepea"];
+    selectedPlants = plants.map(plant => plant.id);
     const channel = supabaseClient.channel(`match-${lobbyId}`, {config: {broadcast: {ack: true}}});
     matchChannel = channel;
     channel.on("broadcast", {event: "action"}, ({payload}) => {
@@ -157,7 +157,7 @@ function applyMatchState(state) {
     sunDrops = state.sunDrops;
     attackEvents = state.attackEvents || [];
     const lawn = document.getElementById("lawn");
-    for (const [className, items, render] of [["plant-on-board", boardPlants, renderBoardPlant], ["zombie", zombies, renderZombie], ["sun", sunDrops, renderSun]]) {
+    for (const [className, items, render] of [["plant-on-board", boardPlants, renderBoardPlant], ["zombie", zombies, renderZombie], ["sun", sunDrops.filter(isSunVisible), renderSun]]) {
         const ids = new Set(items.map(item => item.id));
         lawn.querySelectorAll(`.${className}`).forEach(element => {
             if (!ids.has(element.dataset.id)) element.remove();

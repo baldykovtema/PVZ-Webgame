@@ -15,9 +15,12 @@ function updateSun() {
 
 
 function spawnSun() {
-    const drop = {id: crypto.randomUUID(), x: 10 + Math.random() * 80, y: 10 + Math.random() * 80, remaining: 10000};
-    sunDrops.push(drop);
-    renderSun(drop);
+    const owners = gameMode === "online" ? matchPlayers.map(player => player.user_id) : [null];
+    for (const ownerId of owners) {
+        const drop = {id: crypto.randomUUID(), x: 10 + Math.random() * 80, y: 10 + Math.random() * 80, remaining: 10000, ownerId};
+        sunDrops.push(drop);
+        renderSun(drop);
+    }
 }
 
 function spawnPlantSun(plant) {
@@ -32,7 +35,12 @@ function spawnPlantSun(plant) {
     renderSun(drop);
 }
 
+function isSunVisible(drop) {
+    return gameMode !== "online" || drop.ownerId === getLocalMatchUserId();
+}
+
 function renderSun(drop) {
+    if (!isSunVisible(drop)) return;
     const element = document.createElement("div");
     element.className = "sun";
     element.dataset.id = drop.id;
@@ -42,7 +50,7 @@ function renderSun(drop) {
     element.onclick = event => {
         event.stopPropagation();
         if (gameMode === "online" && !isMatchHost()) sendMatchAction({type: "sun", id: drop.id});
-        else collectSun(drop.id, currentUser?.id);
+        else collectSun(drop.id, gameMode === "online" ? getLocalMatchUserId() : currentUser?.id);
     };
     document.getElementById("lawn").appendChild(element);
 }
