@@ -151,6 +151,7 @@ function renderPlants() {
     plants.forEach(plant => {
 
         const unlocked = plantSelectionPool.includes(plant.id);
+        if (gameMode === "infinite" && !unlocked) return;
 
 
         const card =
@@ -214,6 +215,7 @@ function renderPlants() {
 
 
 function togglePlant(id) {
+    if (!plantSelectionPool.includes(id)) return;
 
     if (
         selectedPlants
@@ -259,6 +261,9 @@ function updateSelectedCount() {
 
 function openPlantSelection({title, description, selected = [], pool, limit = 10, startText = "🎮 НАЧАТЬ ИГРУ", onStart, onCancel}) {
     plantSelectionPool = [...new Set(pool || getUnlockedPlantIds(currentLevel))];
+    if (gameMode === "infinite") {
+        plantSelectionPool = filterUnlockedPlants(plantSelectionPool, profile?.unlocked_level || 1);
+    }
     plantSelectionLimit = Math.max(1, Math.min(limit, plantSelectionPool.length || 1));
     selectedPlants = (gameMode === "online" ? selected : filterUnlockedPlants(selected, currentLevel)).filter(id => plantSelectionPool.includes(id)).slice(0, plantSelectionLimit);
     plantSelectionStart = onStart;
