@@ -65,6 +65,20 @@ const assets = new Map([...html.matchAll(/(?:src|href)="((?:js|css)\/[^"]+)"/g)]
         });
         assert.equal(await page.locator('.terrain-4').count(), 1);
         assert.equal(await page.locator('.shot-wintermelon').textContent(), '🍈');
+        await page.evaluate(() => {
+            boardPlants = []; zombies = []; createBoard();
+            gameRunning = true; endingGame = false; shovelMode = false;
+            activePlantId = 'peashooter'; selectedPlants = ['peashooter']; sun = 10000;
+        });
+        for (let row=0; row<5; row++) {
+            for (let col=0; col<10; col++) {
+                const cell = page.locator(`.grid-cell[data-row="${row}"][data-col="${col}"]`);
+                const bounds = await cell.boundingBox();
+                await page.mouse.click(bounds.x+bounds.width*.5, bounds.y+bounds.height*.75);
+                assert.equal(await page.evaluate(({row,col}) => boardPlants.some(p=>p.row===row && p.col===col), {row,col}), true, `roof planting row ${row}, col ${col}`);
+            }
+        }
+        assert.equal(await page.locator('.plant-on-board').count(),50);
         assert.deepEqual(errors, []);
         if (process.env.PVZ_SCREENSHOT) await page.screenshot({path: process.env.PVZ_SCREENSHOT});
         console.log('Browser smoke passed: selection, real grid clicks, planting, sun cost, shovel; no page errors.');

@@ -218,6 +218,9 @@ function createBoard() {
                 "grid-cell" + ([2,3].includes(location) && [2,3].includes(row) ? " water-cell" : "");
 
 
+            cell.dataset.row = row;
+            cell.dataset.col = col;
+
             cell.style.left =
                 `${boardColStart(col)}%`;
 
@@ -285,7 +288,8 @@ function handleLawnClick(event) {
 
     if (
         event.target !==
-        event.currentTarget
+        event.currentTarget &&
+        !event.target.classList.contains("grid-cell")
     ) {
 
         return;
@@ -298,24 +302,20 @@ function handleLawnClick(event) {
             .getBoundingClientRect();
 
 
-    const x =
-        event.clientX -
-        rect.left;
+    const x = event.clientX - rect.left - (event.currentTarget.clientLeft || 0);
 
 
-    const y =
-        event.clientY -
-        rect.top;
+    const y = event.clientY - rect.top - (event.currentTarget.clientTop || 0);
 
 
-    const boardX = (x / rect.width * 100 - BOARD_X_START) / BOARD_X_WIDTH;
+    const boardX = (x / (event.currentTarget.clientWidth || rect.width) * 100 - BOARD_X_START) / BOARD_X_WIDTH;
     const col = Math.floor(boardX * 10);
 
 
     const row =
         Math.floor(
             y /
-            (rect.height / BOARD_ROWS)
+            ((event.currentTarget.clientHeight || rect.height) / BOARD_ROWS)
         );
 
 
