@@ -77,3 +77,5 @@ let matchTickBusy = false;
 let lastMatchHello = 0;
 let joiningLobby = false;
 let readyBusy = false;
+
+let sandboxLocation = 0;

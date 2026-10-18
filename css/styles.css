@@ -1327,3 +1327,12 @@ button.my-plant {
     .game-controls .players-panel { width:110px; font-size:12px; padding:4px; }
     .game-controls .side-panel { padding:4px; gap:4px; }
 }
+
+#sandboxScreen { padding:24px; overflow:auto; }
+#sandboxScreen.active { display:block; }
+.sandbox-map { cursor:pointer; color:white; font-size:20px; }
+.sandbox-zombies { display:flex; flex-wrap:wrap; align-items:center; gap:6px; padding:0 12px 8px; flex:none; }
+.sandbox-zombies[hidden] { display:none; }
+.sandbox-zombies button { padding:6px 12px; }
+#gameScreen[data-mode="sandbox"] .my-plant-list { display:grid; grid-template-columns:repeat(10,minmax(48px,1fr)); max-height:none; overflow-x:auto; }
+#gameScreen[data-mode="sandbox"] .my-plant { font-size:18px; min-height:36px; }

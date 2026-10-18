@@ -84,6 +84,24 @@ const assets = new Map([...html.matchAll(/(?:src|href)="((?:js|css)\/[^"?]+)(?:\
         assert.equal(await page.locator('.plant-on-board').count(),50);
         assert.deepEqual(errors, []);
         if (process.env.PVZ_SCREENSHOT) await page.screenshot({path: process.env.PVZ_SCREENSHOT});
+        await page.evaluate(() => { stopGame(); profile.unlocked_level=1; showMenu(); });
+        await page.getByRole('button', {name:'🏖️ Играть', exact:true}).click();
+        assert.equal(await page.locator('#sandboxMaps button').count(),5);
+        await page.locator('#sandboxMaps button').nth(4).click();
+        await page.evaluate(() => stopGame());
+        assert.equal(await page.locator('#myPlantList button').count(),50);
+        assert.equal(await page.locator('#sunCount').textContent(),'∞');
+        assert.equal(await page.locator('.terrain-4').count(),1);
+        await page.evaluate(() => { gameRunning=true; sun=0; });
+        await page.locator('#myPlantList button').last().click();
+        const roofCell = await page.locator('.grid-cell[data-row="2"][data-col="4"]').boundingBox();
+        await page.mouse.click(roofCell.x+roofCell.width/2,roofCell.y+roofCell.height/2);
+        assert.equal(await page.evaluate(()=>boardPlants[0]?.plantId),'primalwallnut');
+        assert.equal(await page.locator('#sunCount').textContent(),'∞');
+        await page.locator('#sandboxZombies button').nth(2).click();
+        assert.equal(await page.evaluate(()=>zombies.some(z=>z.emoji.includes('🪣'))),true);
+        assert.deepEqual(errors, []);
+        if(process.env.PVZ_SCREENSHOT) await page.screenshot({path:process.env.PVZ_SCREENSHOT});
         console.log('Browser smoke passed: selection, real grid clicks, planting, sun cost, shovel; no page errors.');
     } finally {
         await browser.close();

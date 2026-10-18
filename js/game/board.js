@@ -3,7 +3,8 @@
 ===================================================== */
 
 function startGame(saved = null) {
-    if (gameMode !== "online") selectedPlants =
+    if (gameMode === "sandbox") selectedPlants = plants.map(p => p.id);
+    else if (gameMode !== "online") selectedPlants =
         filterUnlockedPlants(selectedPlants, gameMode === "campaign" ? currentLevel : profile?.unlocked_level || currentLevel);
 
     if (!selectedPlants.length) {
@@ -31,6 +32,7 @@ function startGame(saved = null) {
     document.getElementById("shovelButton").style.background = "";
     document.getElementById("levelGameName").textContent = gameMode === "infinite"
         ? `Бесконечная игра • слот ${infiniteSlot}`
+        : gameMode === "sandbox" ? `Песочница • ${locations[sandboxLocation].name}`
         : gameMode === "online" ? "Совместная игра • личное солнце"
             : gameMode === "mini" ? getMiniGameTitle()
                 : `Уровень ${currentLevel}`;
@@ -41,6 +43,8 @@ function startGame(saved = null) {
     document.getElementById("chatBox").hidden = gameMode !== "online";
     document.getElementById("chatButton").hidden = gameMode !== "online";
     if (gameMode === "online") initializePlayerSuns(saved?.playerSuns);
+    document.getElementById("gameScreen").dataset.mode = gameMode;
+    renderSandboxZombies();
     renderMyPlants();
     renderPlayersPanel();
     createBoard();
@@ -56,7 +60,7 @@ function startGame(saved = null) {
     }
     gameRunning = true;
     clearInterval(autosaveTimer);
-    if (gameMode !== "online") {
+    if (!["online", "sandbox"].includes(gameMode)) {
         autosaveTimer = setInterval(saveBackgroundGame, 15000);
         saveBackgroundGame();
     }
@@ -64,7 +68,7 @@ function startGame(saved = null) {
 }
 
 function isEndless() {
-    return gameMode === "infinite" || (gameMode === "online" && currentLobby?.difficulty === "infinite");
+    return gameMode === "sandbox" || gameMode === "infinite" || (gameMode === "online" && currentLobby?.difficulty === "infinite");
 }
 
 function getWaveLimit() {
@@ -99,11 +103,13 @@ function getSunOwnerId(ownerId = currentUser?.id) {
 }
 
 function getPlayerSun(ownerId = currentUser?.id) {
+    if (gameMode === "sandbox") return "∞";
     const sunOwnerId = getSunOwnerId(ownerId);
     return sunOwnerId ? (playerSuns[sunOwnerId] ?? 125) : sun;
 }
 
 function setPlayerSun(ownerId, value) {
+    if (gameMode === "sandbox") return;
     const sunOwnerId = getSunOwnerId(ownerId);
     if (!sunOwnerId) {
         sun = value;
@@ -358,11 +364,11 @@ function plantAt(row, col, plantId = activePlantId, owner = profile.username, ow
         ? matchPlantSelections[ownerId] || []
         : selectedPlants;
     if (!plant || !ownerPlantList.includes(plantId)) return;
-    if (getPlayerSun(ownerId) < plant.cost) {
+    if (gameMode !== "sandbox" && getPlayerSun(ownerId) < plant.cost) {
         if (owner === profile.username) showNoSunNotice();
         return;
     }
-    setPlayerSun(ownerId, getPlayerSun(ownerId) - plant.cost);
+    if (gameMode !== "sandbox") setPlayerSun(ownerId, getPlayerSun(ownerId) - plant.cost);
     updateSun();
     const boardPlant = {
         id: crypto.randomUUID(), plantId, row, col, owner, ownerId,

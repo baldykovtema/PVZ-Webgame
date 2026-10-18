@@ -14,7 +14,7 @@ if (/iPhone|iPod|Android.*Mobile|Windows Phone|IEMobile|Opera Mini/i.test(naviga
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
-<link rel="stylesheet" href="css/styles.css?v=roof-grid-3">
+<link rel="stylesheet" href="css/styles.css?v=sandbox-1">
 </head>
 
 <body>
@@ -280,6 +280,13 @@ if (/iPhone|iPod|Android.*Mobile|Windows Phone|IEMobile|Opera Mini/i.test(naviga
             </div>
 
 
+            <div class="menu-card">
+                <div class="emoji">🏖️</div>
+                <h2>Песочница</h2>
+                <p>Все 50 растений, все зомби, бесконечное солнце и волны. Выбери любую карту.</p>
+                <button class="primary" onclick="openSandbox()">🏖️ Играть</button>
+            </div>
+
         </div>
 
     </div>
@@ -533,6 +540,7 @@ if (/iPhone|iPod|Android.*Mobile|Windows Phone|IEMobile|Opera Mini/i.test(naviga
 
      </div>
 
+    <div id="sandboxZombies" class="sandbox-zombies" hidden></div>
     <div class="game-area">
 
         <div
@@ -848,6 +856,13 @@ if (/iPhone|iPod|Android.*Mobile|Windows Phone|IEMobile|Opera Mini/i.test(naviga
 
 </section>
 
+
+<section id="sandboxScreen" class="screen">
+    <button class="secondary" onclick="showMenu()">← В меню</button>
+    <h1>🏖️ Песочница — выбери карту</h1>
+    <p>Все 50 растений доступны сразу в панели. Солнце не заканчивается, волны бесконечны. Можно добавлять любой тип зомби кнопками.</p>
+    <div id="sandboxMaps" class="menu-grid"></div>
+</section>
 
 <!-- Shared declarations first; initialization runs after all features are loaded. -->
 <script src="js/config.js"></script>

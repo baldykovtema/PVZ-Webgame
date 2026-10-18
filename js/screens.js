@@ -210,3 +210,42 @@ function startMiniGame(id) {
         onCancel: () => miniGames()
     });
 }
+
+function openSandbox() {
+    const grid = document.getElementById("sandboxMaps");
+    grid.innerHTML = "";
+    locations.forEach((location, index) => {
+        const button = document.createElement("button");
+        button.className = "menu-card sandbox-map";
+        button.textContent = `${location.icon} ${location.name} — начать`;
+        button.onclick = () => startSandbox(index);
+        grid.appendChild(button);
+    });
+    showScreen("sandboxScreen");
+}
+
+function startSandbox(location) {
+    if (!Number.isInteger(location) || location < 0 || location >= locations.length) return;
+    sandboxLocation = location;
+    gameMode = "sandbox";
+    activeMiniGame = null;
+    selectedPlants = plants.map(p => p.id);
+    startGame();
+}
+
+function renderSandboxZombies() {
+    const panel = document.getElementById("sandboxZombies");
+    panel.innerHTML = "";
+    panel.hidden = gameMode !== "sandbox";
+    if (gameMode !== "sandbox") return;
+    const label = document.createElement("span");
+    label.textContent = "Добавить зомби в случайный ряд:";
+    panel.appendChild(label);
+    zombieTypes.forEach((type,index) => {
+        const button = document.createElement("button");
+        button.className = "secondary";
+        button.textContent = `${type.emoji} ${type.name}`;
+        button.onclick = () => { if (gameRunning && !endingGame) spawnZombie(index); };
+        panel.appendChild(button);
+    });
+}

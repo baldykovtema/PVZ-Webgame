@@ -115,7 +115,7 @@ function toggleGameSound() {
 }
 
 function saveBackgroundGame() {
-    if (!gameRunning || endingGame || gameMode === "online" || gameMode === "mini") return;
+    if (!gameRunning || endingGame || gameMode === "online" || gameMode === "mini" || gameMode === "sandbox") return;
     try {
         const storage = window.localStorage;
         if (!storage) return;
@@ -184,7 +184,7 @@ function collectSun(id, ownerId = currentUser?.id) {
    ZOMBIES
 ===================================================== */
 
-function spawnZombie() {
+function spawnZombie(typeIndex = null) {
 
     const lawn =
         document.getElementById(
@@ -199,7 +199,7 @@ function spawnZombie() {
     }
 
 
-    const maxType =
+    const maxType = gameMode === "sandbox" ? zombieTypes.length :
         Math.min(
 
             zombieTypes.length,
@@ -212,14 +212,8 @@ function spawnZombie() {
         );
 
 
-    const type =
-        zombieTypes[
-            Math.floor(
-                Math.random() *
-                maxType
-            )
-        ];
-
+    const type = zombieTypes[gameMode === "sandbox" && Number.isInteger(typeIndex) && zombieTypes[typeIndex]
+        ? typeIndex : Math.floor(Math.random() * maxType)];
 
     const row =
         Math.floor(
@@ -613,6 +607,7 @@ async function loseGame() {
         activeMiniGame = null;
         showMenu();
     } else if (gameMode === "infinite") await showSaves();
+    else if (gameMode === "sandbox") openSandbox();
     else showMap();
 }
 
@@ -761,7 +756,8 @@ async function exitGame() {
         }
     } else {
         clearBackgroundGame();
-        showMap();
+        if (gameMode === "sandbox") showMenu();
+        else showMap();
     }
 }
 

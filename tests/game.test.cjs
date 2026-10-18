@@ -545,3 +545,29 @@ test('all projectiles use equal travel speed and scale duration with distance', 
     assert.equal(new Set(shots.map(p=>p.style.transitionDuration)).size,1);
     assert.equal(app.run('getProjectileFlightTime({fromX:50,fromY:50,toX:10,toY:50},1000,600)'),far);
 });
+
+test('sandbox unlocks all plants with unlimited sun and any map without changing profile', () => {
+    const app=setup();
+    app.run('profile.unlocked_level=1; startSandbox(4)');
+    assert.equal(app.run('selectedPlants.length'),50);
+    assert.equal(app.root.querySelector('#myPlantList').children.length,50);
+    assert.equal(app.run('getBattleLocation()'),4);
+    assert.equal(app.run('getPlayerSun()'),'∞');
+    app.run('sun=0; plantAt(0,0,"primalwallnut"); collectSun("missing")');
+    assert.equal(app.run('boardPlants[0].plantId'),'primalwallnut');
+    assert.equal(app.run('sun'),0);
+    assert.equal(app.run('profile.unlocked_level'),1);
+    assert.equal(app.run('isEndless()'),true);
+    for(let i=0;i<5;i++) {app.run(`startSandbox(${i})`); assert.equal(app.run('getBattleLocation()'),i);}
+});
+
+test('sandbox provides all zombie types from wave one and continues beyond ten waves', async () => {
+    const app=setup(); app.run('startSandbox(0); zombieTypes.forEach((z,i)=>spawnZombie(i))');
+    assert.equal(app.run('zombies.length'),4);
+    assert.equal(app.run('new Set(zombies.map(z=>z.emoji)).size'),4);
+    app.run('zombies=[]; currentWave=10; waveSpawned=waveSize(); spawnElapsed=0;');
+    await app.tick(100);
+    assert.equal(app.run('currentWave'),11);
+    assert.equal(app.run('gameRunning'),true);
+    assert.equal(app.run('selectedPlants.length'),50);
+});

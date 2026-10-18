@@ -308,6 +308,7 @@ for (const plant of plants) {
     Object.assign(plant, {shot, description, damage});
 }
 function getBattleLocation() {
+    if (gameMode === "sandbox") return sandboxLocation;
     if (gameMode === "mini") return activeMiniGame === "night" ? 1 : 0;
     return Math.min(4, Math.max(0, Math.floor((currentLevel - 1) / 10)));
 }
