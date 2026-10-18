@@ -1312,3 +1312,18 @@ button.my-plant {
 .zombie.hypnotized { filter:hue-rotate(210deg); text-shadow:0 0 16px #df85ff; }
 @keyframes projectileLob { 50% { translate:0 -65px; rotate:160deg; } }
 @keyframes projectileSpin { to { rotate:360deg; } }
+
+/* Keep controls outside the planting surface so every cell can receive clicks. */
+#gameScreen { height:100dvh; min-height:0; }
+#gameScreen .game-top { flex:none; }
+.game-controls { display:flex; gap:12px; padding:8px 12px; flex:none; align-items:stretch; }
+.game-controls .side-panel { position:static; width:auto; flex:1; min-width:0; transform:none; }
+.game-controls .players-panel { position:static; width:175px; flex:none; transform:none; }
+.game-area { min-height:0; padding:6px 12px 12px; }
+#gameScreen .lawn { width:100%; height:100%; }
+.grid-cell { border-color:rgba(255,255,255,.25); }
+@media(max-width:700px) {
+    .game-controls { gap:6px; padding:6px; }
+    .game-controls .players-panel { width:110px; font-size:12px; padding:4px; }
+    .game-controls .side-panel { padding:4px; gap:4px; }
+}

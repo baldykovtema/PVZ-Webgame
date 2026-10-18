@@ -5,7 +5,7 @@ const path = require('node:path');
 const assert = require('node:assert/strict');
 const projectRoot = path.join(__dirname, '..');
 const html = fs.readFileSync(path.join(projectRoot, 'index.html'), 'utf8');
-const assets = new Map([...html.matchAll(/(?:src|href)="((?:js|css)\/[^"]+)"/g)]
+const assets = new Map([...html.matchAll(/(?:src|href)="((?:js|css)\/[^"?]+)(?:\?[^"]*)?"/g)]
     .map(([, filename]) => ['/' + filename, filename]));
 (async () => {
     const browser = await chromium.launch({headless: true, ...(process.env.CHROME_EXECUTABLE ? {executablePath: process.env.CHROME_EXECUTABLE} : {})});
@@ -70,11 +70,14 @@ const assets = new Map([...html.matchAll(/(?:src|href)="((?:js|css)\/[^"]+)"/g)]
             gameRunning = true; endingGame = false; shovelMode = false;
             activePlantId = 'peashooter'; selectedPlants = ['peashooter']; sun = 10000;
         });
+        const gridBox = await lawn.boundingBox();
+        const controlsBox = await page.locator('.game-controls').boundingBox();
+        assert.ok(controlsBox.y+controlsBox.height <= gridBox.y, 'controls must not overlap planting grid');
         for (let row=0; row<5; row++) {
             for (let col=0; col<10; col++) {
                 const cell = page.locator(`.grid-cell[data-row="${row}"][data-col="${col}"]`);
                 const bounds = await cell.boundingBox();
-                await page.mouse.click(bounds.x+bounds.width*.5, bounds.y+bounds.height*.75);
+                await page.mouse.click(bounds.x+bounds.width*.5, bounds.y+bounds.height*.5);
                 assert.equal(await page.evaluate(({row,col}) => boardPlants.some(p=>p.row===row && p.col===col), {row,col}), true, `roof planting row ${row}, col ${col}`);
             }
         }
