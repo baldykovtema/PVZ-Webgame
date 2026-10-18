@@ -532,3 +532,16 @@ test('hypnosis turns a zombie friendly and location maps reset between levels', 
         assert.equal(app.root.querySelector('#lawn').className,`lawn terrain-${i}`);
     }
 });
+
+
+test('all projectiles use equal travel speed and scale duration with distance', () => {
+    const app = setup();
+    const near = app.run('getProjectileFlightTime({fromX:10,fromY:50,toX:30,toY:50},1000,600)');
+    const far = app.run('getProjectileFlightTime({fromX:10,fromY:50,toX:50,toY:50},1000,600)');
+    assert.equal(far,near*2);
+    app.run('startGame(); plants.filter(p=>p.damage).forEach((p,i)=>renderAttack({id:"speed"+i,plantId:p.id,fromX:10,fromY:50,toX:50,toY:50}))');
+    const shots = app.root.querySelectorAll('.projectile');
+    assert.ok(shots.length>20);
+    assert.equal(new Set(shots.map(p=>p.style.transitionDuration)).size,1);
+    assert.equal(app.run('getProjectileFlightTime({fromX:50,fromY:50,toX:10,toY:50},1000,600)'),far);
+});

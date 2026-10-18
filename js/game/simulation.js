@@ -509,13 +509,24 @@ function queueAttack(plant, target, shot = null, volley = 0) {
     renderAttack(event);
 }
 
+// One speed for every projectile, measured in lawn widths per second.
+const PROJECTILE_SPEED = .55;
+function getProjectileFlightTime(event, width, height) {
+    const distance = Math.hypot((event.toX-event.fromX)*width/100, (event.toY-event.fromY)*height/100);
+    return distance / (width * PROJECTILE_SPEED) * 1000;
+}
+
 function renderAttack(event) {
     if (!event?.id || renderedAttackEvents.has(event.id)) return;
     renderedAttackEvents.add(event.id);
     const lawn = document.getElementById("lawn");
     if (!lawn) return;
 
+    const bounds = lawn.getBoundingClientRect();
+    const flightTime = getProjectileFlightTime(event, bounds.width || 1, bounds.height || 1);
     const projectile = document.createElement("div");
+    projectile.style.transitionDuration = `${flightTime}ms`;
+    projectile.style.setProperty?.("--flight-time", `${flightTime}ms`);
     const projectileKind = ["icepea", "snowpea", "wintermelon"].includes(event.plantId)
         ? "ice-shot"
         : event.plantId === "firepea" ? "fire-shot"
@@ -540,7 +551,6 @@ function renderAttack(event) {
         projectile.style.top = `${event.toY}%`;
     });
 
-    const flightTime = 1450;
     setTimeout(() => {
         projectile.remove();
         spawnGameEffect(projectileKind === "ice-shot" ? "frost" : projectileKind === "electric-shot" ? "zap" : "hit",

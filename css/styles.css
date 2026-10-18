@@ -1306,7 +1306,7 @@ button.my-plant {
 .terrain-3 .lawn-bushes { filter:brightness(.55); }
 .terrain-4 .lawn-bushes { opacity:.25; }
 .projectile.symbol-shot { width:30px; height:30px; border:0; background:transparent; box-shadow:none; font-size:26px; line-height:30px; text-align:center; }
-.projectile.lobbed-shot { animation: projectileLob 1.45s ease-in-out; }
+.projectile.lobbed-shot { animation: projectileLob var(--flight-time, 1.4s) ease-in-out; }
 .projectile.shot-bloomerang { animation: projectileSpin .4s linear infinite; }
 .projectile.shot-cactus { color:#e9f8b3; font-size:32px; }
 .zombie.hypnotized { filter:hue-rotate(210deg); text-shadow:0 0 16px #df85ff; }
