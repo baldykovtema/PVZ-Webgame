@@ -408,53 +408,100 @@ function getSunDelay() {
 
 function updatePlants() {
     for (const plant of [...boardPlants]) {
+        const id = plant.plantId;
+        const data = plants.find(p => p.id === id);
+        if (!data) continue;
+        const x = boardColCenter(plant.col);
+        const near = boardPlants.filter(p => p.id !== plant.id && Math.abs(p.row-plant.row)<=1 && Math.abs(p.col-plant.col)<=1);
+        const boost = near.some(p => ["coffee", "lily", "moonflower"].includes(p.plantId)) ? 150 : 100;
         plant.age = (plant.age ?? 0) + 100;
-        plant.cooldown = Math.max(0, (plant.cooldown ?? 0) - 100);
-        if (["sunflower", "twinflower", "sunshroom"].includes(plant.plantId)) {
-            const sunInterval = gameMode === "mini" && activeMiniGame === "garden" ? 5000 : 10000;
-            if (plant.cooldown === 0 && plant.age >= sunInterval) {
-                spawnPlantSun(plant);
-                if (plant.plantId === "twinflower") spawnPlantSun(plant);
-                plant.cooldown = sunInterval;
+        plant.cooldown = Math.max(0, (plant.cooldown ?? 0) - boost);
+        if (id === "imitater") {
+            if (plant.age >= 1500 && near.length) {
+                plant.plantId = near.find(p => p.plantId !== "imitater")?.plantId || "peashooter";
+                document.querySelector(`.plant-on-board[data-id="${plant.id}"]`)?.remove();
+                renderBoardPlant(plant);
+                spawnGameEffect("spark", x, rowCenter(plant.row), "🎭");
             }
             continue;
         }
-        if (["wallnut", "tallnut", "primalwallnut"].includes(plant.plantId)) continue;
-        const x = boardColCenter(plant.col);
-        const targets = zombies.filter(z => z.hp > 0 && z.row === plant.row && z.x >= x - 3).sort((a, b) => a.x - b.x);
-        if (plant.plantId === "cherry") {
-            if (plant.age < 800) continue;
-            playGameSound("blast");
-            spawnGameEffect("blast", x, rowCenter(plant.row), "💥");
-            zombies.filter(z => Math.abs(z.row - plant.row) <= 1 && Math.abs(z.x - x) <= 20).forEach(z => z.hp -= 1000);
-            removePlant(plant.id);
-        } else if (plant.plantId === "potatomine") {
-            if (plant.age >= 3000 && targets.some(z => Math.abs(z.x - x) < 6)) {
-                playGameSound("blast");
-                spawnGameEffect("blast", x, rowCenter(plant.row), "💥");
-                targets.filter(z => Math.abs(z.x - x) < 12).forEach(z => z.hp -= 1000);
-                removePlant(plant.id);
+        if (["sunflower", "twinflower", "sunshroom", "moonflower", "marigold"].includes(id)) {
+            const interval = gameMode === "mini" && activeMiniGame === "garden" ? 5000 : id === "marigold" ? 14000 : 10000;
+            if (!plant.cooldown && plant.age >= interval) {
+                spawnPlantSun(plant);
+                if (id === "twinflower" || id === "marigold" || (id === "sunshroom" && plant.age >= 30000)) spawnPlantSun(plant);
+                plant.cooldown = interval;
             }
-        } else if (targets.length && plant.cooldown === 0) {
-            const target = targets[0];
-            if (plant.plantId === "bokchoy" && target.x - x > 15) continue;
-            const damage = {repeater: 40, firepea: 45, bokchoy: 50, corn: 25, cactus: 30, threepeater: 35, melonpult: 55, wintermelon: 50, electricpea: 45, primalpea: 40};
-            playGameSound(["icepea", "snowpea", "wintermelon"].includes(plant.plantId) ? "ice" : plant.plantId === "firepea" ? "fire" : "shot");
-            target.hp -= damage[plant.plantId] ?? 20;
-            queueAttack(plant, target);
-            if (["icepea", "snowpea", "wintermelon"].includes(plant.plantId)) target.slow = 3000;
-            plant.cooldown = plant.plantId === "bokchoy" ? 700 : 1200;
+            continue;
         }
+        if (id === "primalwallnut" && plant.age % 2000 === 0) plant.health = Math.min(1200, plant.health + 8);
+        const enemies = zombies.filter(z => z.hp > 0 && !z.friendly);
+        const lane = enemies.filter(z => z.row === plant.row).sort((a,b) => a.x-b.x);
+        if (["cherry", "doomshroom", "jalapeno"].includes(id)) {
+            if (plant.age < 800) continue;
+            const radius = id === "doomshroom" ? 2 : 1;
+            enemies.filter(z => id === "jalapeno" ? z.row === plant.row : Math.abs(z.row-plant.row)<=radius && Math.abs(z.x-x)<=(id === "doomshroom" ? 35 : 20)).forEach(z => z.hp -= 1800);
+            spawnGameEffect("blast", x, rowCenter(plant.row), id === "jalapeno" ? "🔥🔥🔥" : "💥");
+            playGameSound("blast"); removePlant(plant.id); continue;
+        }
+        if (["potatomine", "squash", "tanglekelp"].includes(id)) {
+            const range = id === "squash" ? 12 : 6;
+            const target = lane.find(z => Math.abs(z.x-x)<range);
+            if (!target || (id === "potatomine" && plant.age<3000)) continue;
+            (id === "tanglekelp" ? [target] : lane.filter(z => Math.abs(z.x-target.x)<10)).forEach(z => z.hp -= 1800);
+            spawnGameEffect("blast", target.x, rowCenter(plant.row), data.emoji);
+            removePlant(plant.id); continue;
+        }
+        if (plant.cooldown) continue;
+        if (["spikeweed", "spikerock"].includes(id)) {
+            lane.filter(z => Math.abs(z.x-x)<5).forEach(z => {z.hp -= id === "spikerock" ? 40 : 20; spawnGameEffect("hit",z.x,rowCenter(z.row),"✷");});
+            plant.cooldown = 900; continue;
+        }
+        if (id === "magnetshroom") {
+            const target = enemies.find(z => z.emoji.includes("🪣") && Math.abs(z.row-plant.row)<=1 && Math.abs(z.x-x)<30 && !z.disarmed);
+            if (target) {target.disarmed=true; target.hp-=150; target.emoji="🧟"; const el=document.querySelector(`.zombie[data-id="${target.id}"]`); if(el) el.textContent=target.emoji; spawnGameEffect("zap",target.x,rowCenter(target.row),"🧲"); plant.cooldown=6000;}
+            continue;
+        }
+        if (!data.damage) continue;
+        let targets = lane.filter(z => z.x >= x-3).slice(0,1);
+        if (["splitpea", "bokchoy"].includes(id)) targets = [lane.filter(z => z.x>=x)[0], [...lane].reverse().find(z => z.x<x)].filter(Boolean);
+        if (id === "threepeater") targets = [-1,0,1].map(offset => enemies.filter(z => z.row===plant.row+offset && z.x>=x).sort((a,b)=>a.x-b.x)[0]).filter(Boolean);
+        if (id === "cattail") targets = enemies.sort((a,b)=>a.x-b.x).slice(0,1);
+        if (id === "starfruit") targets = enemies.filter(z => z.row===plant.row || Math.abs((z.x-x)/8-Math.abs(z.row-plant.row))<3).sort((a,b)=>Math.abs(a.x-x)-Math.abs(b.x-x)).slice(0,5);
+        if (["cactus", "bloomerang", "fumeshroom"].includes(id)) targets = lane.filter(z=>z.x>=x && (id!=="fumeshroom" || z.x-x<25)).slice(0,id==="fumeshroom"?10:3);
+        if (id === "scaredyshroom" && enemies.some(z=>Math.abs(z.row-plant.row)<=1 && Math.abs(z.x-x)<12)) continue;
+        if (["bokchoy", "mushroom", "seashroom"].includes(id)) targets = targets.filter(z=>Math.abs(z.x-x)<(id==="bokchoy"?15:28));
+        if (!targets.length) continue;
+        for (const target of targets) {
+            let damage = data.damage;
+            let shot = data.shot;
+            if (["corn","kernelpult"].includes(id) && Math.random()<.25) {shot="🧈"; target.stun=2000; damage=40;}
+            if (["peashooter","repeater","splitpea","threepeater"].includes(id) && boardPlants.some(p=>p.plantId==="torchwood" && p.row===plant.row && boardColCenter(p.col)>x && boardColCenter(p.col)<target.x)) {damage*=2; shot="🔥"; target.burn=2000;}
+            if (near.some(p=>p.plantId==="plantern")) damage*=1.25;
+            const hits = id === "repeater" ? 2 : 1;
+            target.hp -= damage*hits;
+            for(let n=0;n<hits;n++) queueAttack(plant,target,shot,n);
+            if (["icepea","snowpea","wintermelon"].includes(id)) target.slow=id==="snowpea"?5000:3000;
+            if (["firepea","pepperpult"].includes(id)) {target.burn=3000; target.slow=0;}
+            if (id==="primalpea") {target.x=Math.min(96,target.x+3); target.stun=500;}
+            if (["melonpult","wintermelon","pepperpult","electricpea"].includes(id)) {
+                enemies.filter(z=>z.id!==target.id && Math.abs(z.row-target.row)<=1 && Math.abs(z.x-target.x)<12).forEach(z=>{z.hp-=damage*.5; if(id==="wintermelon") z.slow=3000; if(id==="electricpea") queueAttack(plant,z,"⚡");});
+            }
+            if(id==="bloomerang") {target.hp-=damage; queueAttack(plant,target,"🪃");}
+        }
+        playGameSound(["icepea","snowpea","wintermelon"].includes(id)?"ice":id==="firepea"?"fire":"shot");
+        plant.cooldown=id==="bokchoy"?700:1200;
     }
 }
 
-function queueAttack(plant, target) {
+function queueAttack(plant, target, shot = null, volley = 0) {
     const event = {
         id: crypto.randomUUID(),
         plantId: plant.plantId,
+        shot, volley,
         fromX: boardColCenter(plant.col) + 2,
         fromY: rowCenter(plant.row),
-        toX: Math.max(boardColCenter(plant.col) + 2, target.x),
+        toX: target.x,
         toY: rowCenter(target.row)
     };
     attackEvents.push(event);
@@ -474,7 +521,11 @@ function renderAttack(event) {
         : event.plantId === "firepea" ? "fire-shot"
         : event.plantId === "electricpea" ? "electric-shot"
         : event.plantId === "bokchoy" ? "punch" : "pea-shot";
-    projectile.className = `projectile ${projectileKind}`;
+    projectile.className = `projectile ${projectileKind} shot-${event.plantId}`;
+    const symbol = event.shot || plants.find(p => p.id === event.plantId)?.shot;
+    if (symbol && symbol !== "●") { projectile.textContent = symbol; projectile.className += " symbol-shot"; }
+    if (["melonpult","wintermelon","cabbagepult","kernelpult","corn","pepperpult"].includes(event.plantId)) projectile.className += " lobbed-shot";
+    projectile.style.marginLeft = `${(event.volley || 0) * -16}px`;
     projectile.style.left = `${event.fromX}%`;
     projectile.style.top = `${event.fromY}%`;
     lawn.appendChild(projectile);
@@ -507,17 +558,31 @@ function updateZombies() {
             document.querySelector(`.zombie[data-id="${zombie.id}"]`)?.remove();
             continue;
         }
-        const blocker = boardPlants.find(p => p.row === zombie.row && Math.abs(zombie.x - boardColCenter(p.col)) < 4);
+        if (zombie.burn > 0) {zombie.hp -= 2; zombie.burn -= 100;}
+        if (zombie.stun > 0) {zombie.stun -= 100; continue;}
+        if (zombie.friendly) {
+            const foe = zombies.find(z=>!z.friendly && z.hp>0 && z.row===zombie.row && Math.abs(z.x-zombie.x)<5);
+            if(foe) {foe.hp-=8; zombie.hp-=2;} else zombie.x+=zombie.speed*.5;
+            if(zombie.x>100) zombie.hp=0;
+            const el=document.querySelector(`.zombie[data-id="${zombie.id}"]`); if(el) {el.style.left=`${zombie.x}%`; el.classList.add("hypnotized");}
+            continue;
+        }
+        const blocker = boardPlants.find(p => p.row === zombie.row && !["spikeweed","spikerock","lily","flowerpot"].includes(p.plantId) && Math.abs(zombie.x - boardColCenter(p.col)) < 4);
         if (blocker) {
-            blocker.health -= 1.2;
+            const shield = boardPlants.some(p => ["umbrellaleaf","flowerpot"].includes(p.plantId) && Math.abs(p.row-blocker.row)<=1 && Math.abs(p.col-blocker.col)<=1);
+            blocker.health -= shield ? .6 : 1.2;
+            if(blocker.plantId==="garlic" && !zombie.garlicCooldown) {zombie.row=(zombie.row+1)%BOARD_ROWS; zombie.garlicCooldown=3000; spawnGameEffect("poof",zombie.x,rowCenter(zombie.row),"🧄");}
+            if(blocker.plantId==="hypnoshroom") {zombie.friendly=true; removePlant(blocker.id); spawnGameEffect("zap",zombie.x,rowCenter(zombie.row),"🌀");}
             if (blocker.health <= 0) removePlant(blocker.id);
         } else {
             zombie.x -= zombie.speed * .5 * ((zombie.slow ?? 0) > 0 ? .5 : 1);
         }
+        zombie.garlicCooldown = Math.max(0, (zombie.garlicCooldown || 0)-100);
         zombie.slow = Math.max(0, (zombie.slow ?? 0) - 100);
         const element = document.querySelector(`.zombie[data-id="${zombie.id}"]`);
         if (element) {
             element.style.left = `${zombie.x}%`;
+            element.style.top = `${rowCenter(zombie.row)}%`;
             element.classList.toggle("slowed", (zombie.slow ?? 0) > 0);
         }
         if (zombie.x < 5) {

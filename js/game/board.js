@@ -189,6 +189,13 @@ function createBoard() {
 
 
     lawn.innerHTML = "";
+    const location = getBattleLocation();
+    lawn.className = `lawn terrain-${location}`;
+    lawn.setAttribute("aria-label", locations[location].name);
+    const scenery = document.createElement("div");
+    scenery.className = "terrain-scenery";
+    scenery.textContent = ["☀️  🌳  🦋", "🌙  ✨  🪦", "☀️  🏖️  🛟", "🌙  ✨  🛟", "🏘️  ☁️  🏘️"][location];
+    lawn.appendChild(scenery);
 
 
     for (
@@ -208,7 +215,7 @@ function createBoard() {
 
 
             cell.className =
-                "grid-cell";
+                "grid-cell" + ([2,3].includes(location) && [2,3].includes(row) ? " water-cell" : "");
 
 
             cell.style.left =
@@ -359,7 +366,7 @@ function plantAt(row, col, plantId = activePlantId, owner = profile.username, ow
     updateSun();
     const boardPlant = {
         id: crypto.randomUUID(), plantId, row, col, owner, ownerId,
-        health: ["wallnut", "tallnut", "primalwallnut"].includes(plantId) ? 800 : 100,
+        health: ({wallnut:800,tallnut:1600,primalwallnut:1200,spikerock:600}[plantId] || 100),
         cooldown: 0, age: 0
     };
     boardPlants.push(boardPlant);
@@ -473,7 +480,9 @@ function showPlantOwner(boardPlant, event) {
     owner.textContent = `👤 Поставил: ${boardPlant.owner}`;
     const health = document.createElement("span");
     health.textContent = `❤️ Здоровье: ${Math.max(0, Math.ceil(boardPlant.health))}`;
-    tooltip.append(heading, owner, health);
+    const ability = document.createElement("span");
+    ability.textContent = plant?.description || "";
+    tooltip.append(heading, owner, health, ability);
     tooltip.hidden = false;
     movePlantTooltip(event);
 }
@@ -569,7 +578,7 @@ function renderMyPlants() {
         const button = document.createElement("button");
         button.className = "my-plant";
         button.textContent = `${plant.emoji} ${plant.cost}`;
-        button.title = plant.name;
+        button.title = `${plant.name}: ${plant.description}`;
         button.setAttribute("aria-pressed", String(activePlantId === id));
         button.style.outline = activePlantId === id ? "3px solid #ffdb60" : "none";
         button.onclick = () => {

@@ -493,3 +493,42 @@ test('online list hides stale lobby ghosts and shows each player once', async ()
     assert.equal(cards.length, 1);
     assert.equal(cards[0].querySelector('.online-player-name').textContent, 'Guest');
 });
+
+test('every plant defines an ability and support plants never shoot peas', () => {
+    const app=setup();
+    assert.equal(app.run('plants.length'),50);
+    assert.equal(app.run('plants.every(p=>typeof p.description === "string" && typeof p.damage === "number")'),true);
+    app.run('startGame(); boardPlants=[{id:"p",plantId:"coffee",row:0,col:0,health:100}]; zombies=[{id:"z",row:0,x:50,hp:100,speed:1}]; updatePlants()');
+    assert.equal(app.run('zombies[0].hp'),100);
+    assert.equal(app.run('attackEvents.length'),0);
+});
+
+test('threepeater fires across rows and splitpea can shoot backwards', () => {
+    const app=setup();
+    app.run('startGame(); boardPlants=[{id:"p",plantId:"threepeater",row:1,col:1,health:100}]; zombies=[0,1,2].map(row=>({id:String(row),row,x:60,hp:100,speed:1})); updatePlants()');
+    assert.equal(app.run('zombies.every(z=>z.hp===80)'),true);
+    app.run('boardPlants=[{id:"p",plantId:"splitpea",row:1,col:5,health:100}]; zombies=[{id:"back",row:1,x:20,hp:100,speed:1}]; updatePlants()');
+    assert.equal(app.run('zombies[0].hp'),80);
+    assert.equal(app.run('attackEvents.at(-1).toX'),20);
+});
+
+test('wintermelon splashes and slows, torchwood ignites peas', () => {
+    const app=setup();
+    app.run('startGame(); boardPlants=[{id:"p",plantId:"wintermelon",row:1,col:0,health:100}]; zombies=[{id:"a",row:1,x:60,hp:200,speed:1},{id:"b",row:2,x:61,hp:200,speed:1}]; updatePlants()');
+    assert.equal(app.run('zombies[1].hp'),175);
+    assert.equal(app.run('zombies[1].slow'),3000);
+    app.run('boardPlants=[{id:"p",plantId:"peashooter",row:1,col:0,health:100},{id:"t",plantId:"torchwood",row:1,col:2,health:100}]; zombies=[{id:"a",row:1,x:60,hp:200,speed:1}]; updatePlants()');
+    assert.equal(app.run('zombies[0].hp'),160);
+    assert.equal(app.run('attackEvents.at(-1).shot'),'🔥');
+});
+
+test('hypnosis turns a zombie friendly and location maps reset between levels', () => {
+    const app=setup();
+    app.run('startGame(); boardPlants=[{id:"p",plantId:"hypnoshroom",row:0,col:0,health:100}]; zombies=[{id:"z",row:0,x:boardColCenter(0),hp:100,speed:1}]; updateZombies()');
+    assert.equal(app.run('zombies[0].friendly'),true);
+    assert.equal(app.run('boardPlants.length'),0);
+    for(let i=0;i<5;i++) {
+        app.run(`currentLevel=${i*10+1}; createBoard()`);
+        assert.equal(app.root.querySelector('#lawn').className,`lawn terrain-${i}`);
+    }
+});

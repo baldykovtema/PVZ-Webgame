@@ -1293,3 +1293,21 @@ button.my-plant {
     color: #9eb39e;
     padding: 20px;
 }
+
+/* Location maps keep identical board coordinates for saves and online play. */
+.lawn.terrain-1 { background: repeating-linear-gradient(0deg,#233855 0 20%,#293f60 20% 40%); border-color:#7183aa; }
+.lawn.terrain-2 { background: linear-gradient(0deg,transparent 0 20%,#168fa5 20% 60%,transparent 60%),repeating-linear-gradient(0deg,#65a744 0 20%,#54913c 20% 40%); border-color:#e4d4a0; }
+.lawn.terrain-3 { background: linear-gradient(0deg,transparent 0 20%,#174b77 20% 60%,transparent 60%),repeating-linear-gradient(0deg,#243f4b 0 20%,#294957 20% 40%); border-color:#7487ac; }
+.lawn.terrain-4 { background: repeating-linear-gradient(0deg,transparent 0 calc(20% - 3px),#713726 calc(20% - 3px) 20%),repeating-linear-gradient(90deg,#b86645 0 7.8%,#84442e 7.8% 8%); border-color:#eab58a; }
+.terrain-scenery { position:absolute; top:1%; right:2%; opacity:.65; font-size:28px; pointer-events:none; z-index:1; }
+.water-cell { background:repeating-linear-gradient(170deg,transparent 0 16px,#bceeff22 17px 19px); border-color:#adf3ff66; }
+.terrain-1 .lawn-bushes { filter:hue-rotate(110deg) brightness(.65); }
+.terrain-3 .lawn-bushes { filter:brightness(.55); }
+.terrain-4 .lawn-bushes { opacity:.25; }
+.projectile.symbol-shot { width:30px; height:30px; border:0; background:transparent; box-shadow:none; font-size:26px; line-height:30px; text-align:center; }
+.projectile.lobbed-shot { animation: projectileLob 1.45s ease-in-out; }
+.projectile.shot-bloomerang { animation: projectileSpin .4s linear infinite; }
+.projectile.shot-cactus { color:#e9f8b3; font-size:32px; }
+.zombie.hypnotized { filter:hue-rotate(210deg); text-shadow:0 0 16px #df85ff; }
+@keyframes projectileLob { 50% { translate:0 -65px; rotate:160deg; } }
+@keyframes projectileSpin { to { rotate:360deg; } }

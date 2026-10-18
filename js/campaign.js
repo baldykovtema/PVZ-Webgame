@@ -198,6 +198,7 @@ function renderPlants() {
 
         if (unlocked) {
 
+            card.title = plant.description;
             card.onclick =
                 () => togglePlant(plant.id);
 
