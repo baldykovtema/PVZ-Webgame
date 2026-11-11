@@ -1336,3 +1336,11 @@ button.my-plant {
 .sandbox-zombies button { padding:6px 12px; }
 #gameScreen[data-mode="sandbox"] .my-plant-list { display:grid; grid-template-columns:repeat(10,minmax(48px,1fr)); max-height:none; overflow-x:auto; }
 #gameScreen[data-mode="sandbox"] .my-plant { font-size:18px; min-height:36px; }
+
+/* Полоса сверху для «← FreasyGames»: экраны начинаются под ней. */
+html:not(.phone-device) body { padding-top: 46px; }
+html:not(.phone-device) .screen { min-height: calc(100vh - 46px); }
+html:not(.phone-device) #gameScreen { height: calc(100dvh - 46px); }
+html:not(.phone-device) #plantsScreen { top: 46px; height: calc(100dvh - 46px); }
+html:not(.phone-device) .plants-container { height: calc(100dvh - 102px); }
+#phoneBlock .fg-phone-back { display: inline-block; margin-top: 22px; padding: 12px 20px; border-radius: 100px; color: #fff; background: #2d6a2d; border: 1px solid #ffffff40; text-decoration: none; font-size: 18px; }
