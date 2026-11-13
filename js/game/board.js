@@ -13,6 +13,8 @@ function startGame(saved = null) {
     }
     stopGame();
     endingGame = false;
+    reviveUsed = false;
+
     document.getElementById("retryProgressButton").hidden = true;
     document.getElementById("exitGameButton").textContent = gameMode === "infinite" ? "💾 Сохранить и выйти" : "← Выйти";
     sun = saved?.sun ?? 125;
